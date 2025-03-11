@@ -1,0 +1,18 @@
+synthetic_data/
+all_code.txt
+std_data_structs.txt
+
+# Ignore environment file with secrets
+.env
+
+# Ignore IDE specific files
+.idea/
+.vscode/
+
+# Ignore OS specific files
+.DS_Store
+Thumbs.db
+
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
