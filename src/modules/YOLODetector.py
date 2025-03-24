@@ -15,7 +15,7 @@ class YOLODetector:
     Incorporates YOLO model functionalities including loading, prediction, and drawing detections.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, DE: bool= False):
         """
         Initializes the YoloModel with the path to the model and confidence threshold.
 
@@ -23,7 +23,7 @@ class YOLODetector:
             model_path (str): Path to the YOLO model file.
             confidence_threshold (float, optional): Minimum confidence for detections. Defaults to 0.8.
         """
-        self.model_path = config.model_path
+        self.model_path = config.yolo_model_path if not DE else config.yolo_DE_model_path
         self.confidence_threshold = config.confidence_threshold
         self.iou_treshold = config.iou_treshold
         self.model = None
@@ -63,7 +63,13 @@ class YOLODetector:
             return None
         
         try:
-            results = self.model.predict(source=image, verbose=False, conf=self.confidence_threshold, iou=self.iou_treshold)
+            # Convert to 3-channel if need
+            if len(image.shape) == 2 or (len(image.shape == 3) and image.shape[2] == 1):
+                controlled_image = np.stack((image,) * 3, axis=-1) if len(image.shape) == 2 else np.repeat(image, 3, axis=2)
+            else:
+                controlled_image = image
+
+            results = self.model.predict(source=controlled_image, verbose=False, conf=self.confidence_threshold, iou=self.iou_treshold)
 
             detections = []
 

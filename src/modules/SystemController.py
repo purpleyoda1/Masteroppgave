@@ -17,6 +17,7 @@ class StreamType:
     DEPTH_COLORMAP_DETECTIONS = "depth_colormap_detections"
     ESTIMATED_DEPTH = "estimated_depth"
     ESTIMATED_DEPTH_COLORMAP = "estimated_depth_colormap"
+    ESTIMATED_DEPTH_DETECTIONS = "estimated_depth_detections"
     POINT_CLOUD = "point_cloud"
 
 class SystemController:
@@ -31,7 +32,7 @@ class SystemController:
         self.camera = None
         self.point_cloud = None
         self.yolo_detector = None
-        self.yolo_estimation_detector = None
+        self.yolo_DE_detector = None
         self.pointnet_detector = None
         self.depth_estimator = None
 
@@ -62,9 +63,9 @@ class SystemController:
         self.yolo_detector = yolo_detector
         self.logger.info("YOLO detector component set")
     
-    def set_yolo_estimation_detector(self, yolo_estimation_detector) -> None:
-        self.yolo_estimation_detector = yolo_estimation_detector
-        self.logger.info("YOLO estimation detector component set")
+    def set_yolo_DE_detector(self, yolo_DE_detector) -> None:
+        self.yolo_DE_detector = yolo_DE_detector
+        self.logger.info("YOLO dept estimation detector component set")
 
     def set_pointnet_detector(self, pointnet_detector) -> None:
         self.pointnet_detector = pointnet_detector
@@ -100,11 +101,11 @@ class SystemController:
                 self.logger.info("YOLO detector intialized")
             
             # Initialize YOLO estimation detector
-            if self.yolo_estimation_detector:
-                if not self.yolo_estimation_detector.initialize():
-                    self.logger.error("Failed to initialize YOLO estimation detector")
+            if self.yolo_DE_detector:
+                if not self.yolo_DE_detector.initialize():
+                    self.logger.error("Failed to initialize YOLO dept estimation detector")
                     return False
-                self.logger.info("YOLO estimation detector initialized")
+                self.logger.info("YOLO depth estimation detector initialized")
 
             # Initialize PointNet detector
             if self.pointnet_detector:
@@ -189,9 +190,9 @@ class SystemController:
         elif detector_type == "pointnet" and self.pointnet_detector:
             self.enabled_detectors.add(detector_type)
             self.logger.info("PointNet detector enabled")
-        elif detector_type == "yoloestimation" and self.yolo_estimation_detector:
+        elif detector_type == "yoloDE" and self.yolo_DE_detector:
             self.enabled_detectors.add(detector_type)
-            self.logger.info("YOLO estimation detector enabled")
+            self.logger.info("YOLO depth estimation detector enabled")
     
     def disable_detector(self, detector_type: str) -> None:
         """Disable specific detector"""
@@ -267,13 +268,13 @@ class SystemController:
             if StreamType.DEPTH in self.current_data:
                 depth_image = self.current_data[StreamType.DEPTH]
                 color_image = self.current_data[StreamType.COLOR]
-                depth_colormap_image = self.current_data[StreamType.DEPTH_COLORMAP]
 
-                depth_3channel = np.stack((depth_image,) * 3, axis=-1)
+                if StreamType.DEPTH_COLORMAP in self.enabled_streams:
+                    depth_colormap_image = self.current_data[StreamType.DEPTH_COLORMAP]
 
                 # Run YOLO detector if enabled
                 if "yolo" in self.enabled_detectors and self.yolo_detector:
-                    detections = self.yolo_detector.detect(depth_3channel)
+                    detections = self.yolo_detector.detect(depth_image)
                     all_detections.extend(detections)
 
                     # Generate visualizations if needed
@@ -307,10 +308,22 @@ class SystemController:
                     estimated_depth = self.depth_estimator.estimate_depth(color_image)
                     self.current_data[StreamType.ESTIMATED_DEPTH] = estimated_depth
 
+                    # Generate estimated colormap if enabled
+                    if StreamType.ESTIMATED_DEPTH_COLORMAP in self.enabled_streams:
+                        estimated_depth_colormap = self.depth_estimator.get_colormap(estimated_depth)
+                        self.current_data[StreamType.ESTIMATED_DEPTH_COLORMAP] = estimated_depth_colormap
+
                     # Run detection on estimation if enabled
-                    if "yoloestimation" in self.enabled_detectors and self.yolo_estimation_detector:
-                        detections = self.yolo_estimation_detector.detect(estimated_depth)
+                    if "yoloDE" in self.enabled_detectors and self.yolo_DE_detector:
+                        detections = self.yolo_DE_detector.detect(estimated_depth)
                         all_detections.extend(detections)
+
+                    # Draw detections on estimation if enabled
+                    if StreamType.ESTIMATED_DEPTH_DETECTIONS in self.enabled_streams:
+                        self.logger.debug(f"Received {len(detections)} detections from YOLO DE")
+                        estimated_depth_detections = self.yolo_DE_detector.draw_detections(estimated_depth.copy(), detections)
+                        self.current_data[StreamType.ESTIMATED_DEPTH_DETECTIONS] = estimated_depth_detections
+
                 
             # Call callbacks
             if all_detections and self.detection_callbacks:

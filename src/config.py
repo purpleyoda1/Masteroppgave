@@ -15,9 +15,15 @@ class Config:
     confidence_threshold: float = 0.8
     iou_treshold: float = 0.5
     @property
-    def model_path(self) -> str:
+    def yolo_model_path(self) -> str:
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         relative_path = "src\\runs\\detect\\v11small\\best.pt"
+        return os.path.join(base_path, relative_path)
+    
+    @property
+    def yolo_DE_model_path(self) -> str:
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        relative_path = "src\\runs\\detect\\MiDaS\\weights\\best.pt"
         return os.path.join(base_path, relative_path)
     
     # Directories
@@ -26,5 +32,8 @@ class Config:
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         relative_path = "saved_frames/test"
         return os.path.join(base_path, relative_path)
+    
+    # MiDaS model
+    midas_model_type: str = "DPT_Hybrid"
 
 

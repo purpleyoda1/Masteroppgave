@@ -1,0 +1,9 @@
+# YOLO dataset configuration
+path: C:\Users\sondr\Documents\NTNU\Master\synthetic_data\training\MiDaS\
+train: images\train 
+val: images\val 
+test: images\test  
+
+# Classes
+nc: 1
+names: ['cylinder'] 

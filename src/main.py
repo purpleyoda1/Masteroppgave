@@ -6,6 +6,7 @@ from config import Config
 from modules.RealSenseCamera import RealSenseCamera
 from modules.SystemController import SystemController, StreamType
 from modules.YOLODetector import YOLODetector
+from modules.MiDaSDepthEstimator import MiDaSDepthEstimator
 import logging
 import time
 
@@ -35,20 +36,39 @@ def main():
     yolo_detector = YOLODetector(config)
     controller.set_yolo_detector(yolo_detector)
 
+    yolo_DE_detector = YOLODetector(config, DE= True)
+    controller.set_yolo_DE_detector(yolo_DE_detector)
+
+    depth_estimator = MiDaSDepthEstimator(config)
+    controller.set_depth_estimator(depth_estimator)
+
     # Initialize system
     if not controller.initialize():
         logging.error("Failed to initialize controller")
         return
     
-    # Enable streams
+
+
+    ########################################
+    #             DATA STREAMS             #
+    ########################################
     controller.enable_stream(StreamType.COLOR)
     controller.enable_stream(StreamType.DEPTH)
-    controller.enable_stream(StreamType.DEPTH_COLORMAP)
-    controller.enable_stream(StreamType.DEPTH_DETECTIONS)
-    controller.enable_stream(StreamType.DEPTH_COLORMAP_DETECTIONS)
+    #controller.enable_stream(StreamType.DEPTH_COLORMAP)
+    #controller.enable_stream(StreamType.DEPTH_DETECTIONS)
+    #controller.enable_stream(StreamType.DEPTH_COLORMAP_DETECTIONS)
+    controller.enable_stream(StreamType.ESTIMATED_DEPTH)
+    controller.enable_stream(StreamType.ESTIMATED_DEPTH_DETECTIONS)
 
-    # Enable detectors
-    controller.enable_detector("yolo")
+
+
+    ########################################
+    #               DETECTORS              #
+    ########################################
+    #controller.enable_detector("yolo")
+    controller.enable_detector("yoloDE")
+
+
 
     # Start system
     controller.start()
@@ -63,7 +83,7 @@ def main():
             data = controller.get_current_data()
             logging.debug(f"Current data types: {list(data.keys())}")
 
-            display_image = data[StreamType.DEPTH_COLORMAP_DETECTIONS]
+            display_image = data[StreamType.ESTIMATED_DEPTH_DETECTIONS]
 
             cv2.imshow("Detection system", display_image)
 
