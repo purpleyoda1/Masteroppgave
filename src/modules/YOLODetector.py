@@ -15,7 +15,7 @@ class YOLODetector:
     Incorporates YOLO model functionalities including loading, prediction, and drawing detections.
     """
 
-    def __init__(self, config, DE: bool= False):
+    def __init__(self, config, model_type: str= None):
         """
         Initializes the YoloModel with the path to the model and confidence threshold.
 
@@ -23,7 +23,9 @@ class YOLODetector:
             model_path (str): Path to the YOLO model file.
             confidence_threshold (float, optional): Minimum confidence for detections. Defaults to 0.8.
         """
-        self.model_path = config.yolo_model_path if not DE else config.yolo_DE_model_path
+        self.model_path = None
+        self.model_type = model_type
+        self.config = config
         self.confidence_threshold = config.confidence_threshold
         self.iou_treshold = config.iou_treshold
         self.model = None
@@ -34,6 +36,8 @@ class YOLODetector:
         Loads the YOLO model from the specified path.
         """
         try:
+            self._set_path()
+            
             if not os.path.exists(self.model_path):
                 logging.error(f"YOLO model not found at {self.model_path}")
                 return False
@@ -47,6 +51,17 @@ class YOLODetector:
         except Exception as e:
             logging.error(f"Error loading YOLO model: {e}")
             return False
+        
+    def _set_path(self) -> None:
+        """
+        Set model path
+        """
+        if self.model_type == "midas":
+            self.model_path = self.config.yolo_midas_model_path
+        elif self.model_type == "pro":
+            self.model_path = self.config.yolo_pro_model_path
+        else:
+            self.model_path = self.config.yolo_model_path
 
     def detect(self, image: np.ndarray) -> List[Detection]:
         """

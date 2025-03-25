@@ -21,9 +21,15 @@ class Config:
         return os.path.join(base_path, relative_path)
     
     @property
-    def yolo_DE_model_path(self) -> str:
+    def yolo_midas_model_path(self) -> str:
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         relative_path = "src\\runs\\detect\\MiDaS\\weights\\best.pt"
+        return os.path.join(base_path, relative_path)
+    
+    @property
+    def yolo_pro_model_path(self) -> str:
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        relative_path = "src\\runs\\detect\\raw_2003\\weights\\best.pt"
         return os.path.join(base_path, relative_path)
     
     # Directories

@@ -15,9 +15,12 @@ class StreamType:
     DEPTH_COLORMAP = "depth_colormap"
     DEPTH_DETECTIONS = "depth_detections"
     DEPTH_COLORMAP_DETECTIONS = "depth_colormap_detections"
-    ESTIMATED_DEPTH = "estimated_depth"
-    ESTIMATED_DEPTH_COLORMAP = "estimated_depth_colormap"
-    ESTIMATED_DEPTH_DETECTIONS = "estimated_depth_detections"
+    MIDAS_ESTIMATED_DEPTH = "midas_estimated_depth"
+    MIDAS_ESTIMATED_DEPTH_COLORMAP = "midas_estimated_depth_colormap"
+    MIDAS_ESTIMATED_DEPTH_DETECTIONS = "midas_estimated_depth_detections"
+    PRO_ESTIMATED_DEPTH = "pro_estimated_depth"
+    PRO_ESTIMATED_DEPTH_COLORMAP = "pro_estimated_depth_colormap"
+    PRO_ESTIMATED_DEPTH_DETECTIONS = "pro_estimated_depth_detections"
     POINT_CLOUD = "point_cloud"
 
 class SystemController:
@@ -32,9 +35,11 @@ class SystemController:
         self.camera = None
         self.point_cloud = None
         self.yolo_detector = None
-        self.yolo_DE_detector = None
+        self.yolo_midas_detector = None
+        self.yolo_pro_detctor = None
         self.pointnet_detector = None
-        self.depth_estimator = None
+        self.midas_depth_estimator = None
+        self.pro_depth_estimator = None
 
         # State
         self.is_running = False
@@ -63,17 +68,25 @@ class SystemController:
         self.yolo_detector = yolo_detector
         self.logger.info("YOLO detector component set")
     
-    def set_yolo_DE_detector(self, yolo_DE_detector) -> None:
-        self.yolo_DE_detector = yolo_DE_detector
-        self.logger.info("YOLO dept estimation detector component set")
+    def set_yolo_midas_detector(self, yolo_midas_detector) -> None:
+        self.yolo_midas_detector = yolo_midas_detector
+        self.logger.info("YOLO MiDaS dept estimation detector component set")
+
+    def set_yolo_pro_detector(self, yolo_pro_detector) -> None:
+        self.yolo_pro_detector = yolo_pro_detector
+        self.logger.info("YOLO Depth Pro dept estimation detector component set")
 
     def set_pointnet_detector(self, pointnet_detector) -> None:
         self.pointnet_detector = pointnet_detector
         self.logger.info("PointNet detector component set")
 
-    def set_depth_estimator(self, depth_estimator) -> None:
-        self.depth_estimator = depth_estimator
-        self.logger.info("Depth estimator component set")
+    def set_midas_depth_estimator(self, midas_depth_estimator) -> None:
+        self.midas_depth_estimator = midas_depth_estimator
+        self.logger.info("Midas depth estimator component set")
+
+    def set_pro_depth_estimator(self, pro_depth_estimator) -> None:
+        self.pro_depth_estimator = pro_depth_estimator
+        self.logger.info("Depth Pro depth estimator component set")
 
     def initialize(self) -> bool:
         """Initalize all added components"""
@@ -100,12 +113,18 @@ class SystemController:
                     return False
                 self.logger.info("YOLO detector intialized")
             
-            # Initialize YOLO estimation detector
-            if self.yolo_DE_detector:
-                if not self.yolo_DE_detector.initialize():
-                    self.logger.error("Failed to initialize YOLO dept estimation detector")
+            # Initialize YOLO MiDaS estimation detector
+            if self.yolo_midas_detector:
+                if not self.yolo_midas_detector.initialize():
+                    self.logger.error("Failed to initialize YOLO MiDaS estimation detector")
                     return False
-                self.logger.info("YOLO depth estimation detector initialized")
+                self.logger.info("YOLO MiDaS depth estimation detector initialized")
+            
+            if self.yolo_pro_detector:
+                if not self.yolo_pro_detector.initialize():
+                    self.logger.error("Failed to initialize YOLO Depth Pro estimation detector")
+                    return False
+                self.logger.info("YOLO Depth Pro depth estimation detector initialized")
 
             # Initialize PointNet detector
             if self.pointnet_detector:
@@ -114,12 +133,19 @@ class SystemController:
                     return False
                 self.logger.info("PointNet detector intialized")
 
-            # Initialize depth estimator
-            if self.depth_estimator:
-                if not self.depth_estimator.initialize():
-                    self.logger.error("Failed to initialize depth estimator")
+            # Initialize MiDaS depth estimator
+            if self.midas_depth_estimator:
+                if not self.midas_depth_estimator.initialize():
+                    self.logger.error("Failed to initialize MiDaS depth estimator")
                     return False
-                self.logger.info("Depth estimator intialized")
+                self.logger.info("MiDaS Depth estimator intialized")
+
+            # Initialize MiDaS depth estimator
+            if self.pro_depth_estimator:
+                if not self.pro_depth_estimator.initialize():
+                    self.logger.error("Failed to initialize Depth Pro depth estimator")
+                    return False
+                self.logger.info("Depth Pro Depth estimator intialized")
             
             self.logger.info("System intialization complete")
             return True
@@ -167,7 +193,6 @@ class SystemController:
         if self.camera:
             self.camera.stop()
 
-
         self.is_running = False
         self.logger.info("System stopped")
     
@@ -190,9 +215,12 @@ class SystemController:
         elif detector_type == "pointnet" and self.pointnet_detector:
             self.enabled_detectors.add(detector_type)
             self.logger.info("PointNet detector enabled")
-        elif detector_type == "yoloDE" and self.yolo_DE_detector:
+        elif detector_type == "yolo_midas" and self.yolo_midas_detector:
             self.enabled_detectors.add(detector_type)
-            self.logger.info("YOLO depth estimation detector enabled")
+            self.logger.info("YOLO MiDaS depth estimation detector enabled")
+        elif detector_type == "yolo_pro" and self.yolo_pro_detector:
+            self.enabled_detectors.add(detector_type)
+            self.logger.info("YOLO Depth Pro depth estimation detector enabled")
     
     def disable_detector(self, detector_type: str) -> None:
         """Disable specific detector"""
@@ -303,27 +331,48 @@ class SystemController:
             if StreamType.COLOR in self.current_data:
                 color_image = self.current_data[StreamType.COLOR]
                 
-                # Run depth estimation if enabled
-                if StreamType.ESTIMATED_DEPTH in self.enabled_streams and self.depth_estimator:
-                    estimated_depth = self.depth_estimator.estimate_depth(color_image)
-                    self.current_data[StreamType.ESTIMATED_DEPTH] = estimated_depth
+                # Run MiDaS depth estimation if enabled
+                if StreamType.MIDAS_ESTIMATED_DEPTH in self.enabled_streams and self.midas_depth_estimator:
+                    estimated_depth = self.midas_depth_estimator.estimate_depth(color_image)
+                    self.current_data[StreamType.MIDAS_ESTIMATED_DEPTH] = estimated_depth
 
                     # Generate estimated colormap if enabled
-                    if StreamType.ESTIMATED_DEPTH_COLORMAP in self.enabled_streams:
-                        estimated_depth_colormap = self.depth_estimator.get_colormap(estimated_depth)
-                        self.current_data[StreamType.ESTIMATED_DEPTH_COLORMAP] = estimated_depth_colormap
+                    if StreamType.MIDAS_ESTIMATED_DEPTH_COLORMAP in self.enabled_streams:
+                        estimated_depth_colormap = self.midas_depth_estimator.get_colormap(estimated_depth)
+                        self.current_data[StreamType.MIDAS_ESTIMATED_DEPTH_COLORMAP] = estimated_depth_colormap
 
                     # Run detection on estimation if enabled
-                    if "yoloDE" in self.enabled_detectors and self.yolo_DE_detector:
-                        detections = self.yolo_DE_detector.detect(estimated_depth)
+                    if "yolo_midas" in self.enabled_detectors and self.yolo_midas_detector:
+                        detections = self.yolo_midas_detector.detect(estimated_depth)
                         all_detections.extend(detections)
 
                     # Draw detections on estimation if enabled
-                    if StreamType.ESTIMATED_DEPTH_DETECTIONS in self.enabled_streams:
-                        self.logger.debug(f"Received {len(detections)} detections from YOLO DE")
-                        estimated_depth_detections = self.yolo_DE_detector.draw_detections(estimated_depth.copy(), detections)
-                        self.current_data[StreamType.ESTIMATED_DEPTH_DETECTIONS] = estimated_depth_detections
+                    if StreamType.MIDAS_ESTIMATED_DEPTH_DETECTIONS in self.enabled_streams:
+                        self.logger.debug(f"Received {len(detections)} detections from YOLO MiDaS")
+                        estimated_depth_detections = self.yolo_midas_detector.draw_detections(estimated_depth.copy(), detections)
+                        self.current_data[StreamType.MIDAS_ESTIMATED_DEPTH_DETECTIONS] = estimated_depth_detections
 
+                # Run Depth Pro depth estimation if enabled
+                if StreamType.PRO_ESTIMATED_DEPTH in self.enabled_streams and self.pro_depth_estimator:
+                    focal_length_px = (self.camera.color_intrinsics.fx + self.camera.color_intrinsics.fy) / 2
+                    estimated_depth = self.pro_depth_estimator.estimate_depth(color_image, focal_length_px = focal_length_px)
+                    self.current_data[StreamType.PRO_ESTIMATED_DEPTH] = estimated_depth
+
+                    # Generate estimated colormap if enabled
+                    if StreamType.PRO_ESTIMATED_DEPTH_COLORMAP in self.enabled_streams:
+                        estimated_depth_colormap = self.pro_depth_estimator.get_colormap(estimated_depth)
+                        self.current_data[StreamType.PRO_ESTIMATED_DEPTH_COLORMAP] = estimated_depth_colormap
+
+                    # Run detection on estimation if enabled
+                    if "yolo_pro" in self.enabled_detectors and self.yolo_pro_detector:
+                        detections = self.yolo_pro_detector.detect(estimated_depth)
+                        all_detections.extend(detections)
+
+                    # Draw detections on estimation if enabled
+                    if StreamType.PRO_ESTIMATED_DEPTH_DETECTIONS in self.enabled_streams:
+                        self.logger.debug(f"Received {len(detections)} detections from YOLO MiDaS")
+                        estimated_depth_detections = self.yolo_pro_detector.draw_detections(estimated_depth.copy(), detections)
+                        self.current_data[StreamType.PRO_ESTIMATED_DEPTH_DETECTIONS] = estimated_depth_detections
                 
             # Call callbacks
             if all_detections and self.detection_callbacks:

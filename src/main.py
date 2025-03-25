@@ -7,14 +7,16 @@ from modules.RealSenseCamera import RealSenseCamera
 from modules.SystemController import SystemController, StreamType
 from modules.YOLODetector import YOLODetector
 from modules.MiDaSDepthEstimator import MiDaSDepthEstimator
+from modules.DepthProEstimator import DepthProEstimator
 import logging
 import time
+import torch
 
 def main():
     # Configure logging level
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
     logging.debug("TESTING: Debug logging is enabled")
-    logging.info("TESTING: Info logging is enabled")
+    #logging.info("TESTING: Info logging is enabled")
 
     try:
         import pythoncom
@@ -22,6 +24,11 @@ def main():
         logging.info("COM initialized with apartment threading model")
     except ImportError:
         logging.info("pythoncom not available")
+
+    print(f"CUDA available: {torch.cuda.is_available()}")
+    print(f"CUDA device count: {torch.cuda.device_count()}")
+    if torch.cuda.is_available():
+        print(f"CUDA device name: {torch.cuda.get_device_name(0)}")
 
     # Load config
     config = Config()
@@ -36,11 +43,17 @@ def main():
     yolo_detector = YOLODetector(config)
     controller.set_yolo_detector(yolo_detector)
 
-    yolo_DE_detector = YOLODetector(config, DE= True)
-    controller.set_yolo_DE_detector(yolo_DE_detector)
+    yolo_midas_detector = YOLODetector(config, model_type="midas")
+    controller.set_yolo_midas_detector(yolo_midas_detector)
 
-    depth_estimator = MiDaSDepthEstimator(config)
-    controller.set_depth_estimator(depth_estimator)
+    yolo_pro_detector = YOLODetector(config, model_type="pro")
+    controller.set_yolo_pro_detector(yolo_pro_detector)
+
+    midas_depth_estimator = MiDaSDepthEstimator(config)
+    controller.set_midas_depth_estimator(midas_depth_estimator)
+
+    pro_depth_estimator = DepthProEstimator(config)
+    controller.set_pro_depth_estimator(pro_depth_estimator)
 
     # Initialize system
     if not controller.initialize():
@@ -57,8 +70,10 @@ def main():
     #controller.enable_stream(StreamType.DEPTH_COLORMAP)
     #controller.enable_stream(StreamType.DEPTH_DETECTIONS)
     #controller.enable_stream(StreamType.DEPTH_COLORMAP_DETECTIONS)
-    controller.enable_stream(StreamType.ESTIMATED_DEPTH)
-    controller.enable_stream(StreamType.ESTIMATED_DEPTH_DETECTIONS)
+    #controller.enable_stream(StreamType.MIDAS_ESTIMATED_DEPTH)
+    #controller.enable_stream(StreamType.MIDAS_ESTIMATED_DEPTH_DETECTIONS)
+    controller.enable_stream(StreamType.PRO_ESTIMATED_DEPTH)
+    #controller.enable_stream(StreamType.PRO_ESTIMATED_DEPTH_DETECTIONS)
 
 
 
@@ -66,7 +81,9 @@ def main():
     #               DETECTORS              #
     ########################################
     #controller.enable_detector("yolo")
-    controller.enable_detector("yoloDE")
+    #controller.enable_detector("yolo_midas")
+    #controller.enable_detector("yolo_pro")
+
 
 
 
@@ -83,7 +100,7 @@ def main():
             data = controller.get_current_data()
             logging.debug(f"Current data types: {list(data.keys())}")
 
-            display_image = data[StreamType.ESTIMATED_DEPTH_DETECTIONS]
+            display_image = data[StreamType.PRO_ESTIMATED_DEPTH]
 
             cv2.imshow("Detection system", display_image)
 
