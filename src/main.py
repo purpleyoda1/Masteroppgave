@@ -70,9 +70,9 @@ def main():
     #controller.enable_stream(StreamType.DEPTH_COLORMAP)
     #controller.enable_stream(StreamType.DEPTH_DETECTIONS)
     #controller.enable_stream(StreamType.DEPTH_COLORMAP_DETECTIONS)
-    #controller.enable_stream(StreamType.MIDAS_ESTIMATED_DEPTH)
+    controller.enable_stream(StreamType.MIDAS_ESTIMATED_DEPTH)
     #controller.enable_stream(StreamType.MIDAS_ESTIMATED_DEPTH_DETECTIONS)
-    controller.enable_stream(StreamType.PRO_ESTIMATED_DEPTH)
+    #controller.enable_stream(StreamType.PRO_ESTIMATED_DEPTH)
     #controller.enable_stream(StreamType.PRO_ESTIMATED_DEPTH_DETECTIONS)
 
 
@@ -100,7 +100,7 @@ def main():
             data = controller.get_current_data()
             logging.debug(f"Current data types: {list(data.keys())}")
 
-            display_image = data[StreamType.PRO_ESTIMATED_DEPTH]
+            display_image = data[StreamType.MIDAS_ESTIMATED_DEPTH]
 
             cv2.imshow("Detection system", display_image)
 
