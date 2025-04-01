@@ -1,121 +1,123 @@
 # src/main.py
 
-import os
-import cv2
-from config import Config
-from modules.RealSenseCamera import RealSenseCamera
-from modules.SystemController import SystemController, StreamType
-from modules.YOLODetector import YOLODetector
-from modules.MiDaSDepthEstimator import MiDaSDepthEstimator
-from modules.DepthProEstimator import DepthProEstimator
+from system.SystemController import SystemController
+from system.SystemData import SystemData
+from system.modules.RealSenseCamera import RealSenseCamera
+from system.modules.YOLODetector import YOLODetector
+from system.modules.MiDaSDepthEstimator import MiDaSDepthEstimator
+from system.modules.DepthProEstimator import DepthProEstimator
+
 import logging
+import cv2
 import time
-import torch
+import numpy as np
+
+from config import Config
+from structs.Detection import Detection
 
 def main():
-    # Configure logging level
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-    logging.debug("TESTING: Debug logging is enabled")
-    #logging.info("TESTING: Info logging is enabled")
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.info("Starting main()")
+    controller = None
+
+    import pythoncom
+    pythoncom.CoInitializeEx(pythoncom.COINIT_APARTMENTTHREADED)
 
     try:
-        import pythoncom
-        pythoncom.CoInitializeEx(pythoncom.COINIT_APARTMENTTHREADED)
-        logging.info("COM initialized with apartment threading model")
-    except ImportError:
-        logging.info("pythoncom not available")
+        config = Config()
+        controller = SystemController(config)
 
-    print(f"CUDA available: {torch.cuda.is_available()}")
-    print(f"CUDA device count: {torch.cuda.device_count()}")
-    if torch.cuda.is_available():
-        print(f"CUDA device name: {torch.cuda.get_device_name(0)}")
+        #------------------------------------------#
+        #              Module names                #
+        #------------------------------------------#
 
-    # Load config
-    config = Config()
+        CAM_NAME = "RealSense_Camera"
+        MIDAS_NAME = "MiDaS_estimator"
+        DEPTHPRO_NAME = "DepthPro_estimator"
+        YOLO_DEPTH_NAME = "YOLO"
+        YOLO_MIDAS_NAME = "YOLO_MiDaS"
+        YOLO_DEPTHPRO_NAME = "YOLO_DepthPro"
 
-    # Create system controller
-    controller = SystemController(config)
-
-    # Initialize components and add to controller
-    camera = RealSenseCamera(config)
-    controller.set_camera(camera)
-
-    yolo_detector = YOLODetector(config)
-    controller.set_yolo_detector(yolo_detector)
-
-    yolo_midas_detector = YOLODetector(config, model_type="midas")
-    controller.set_yolo_midas_detector(yolo_midas_detector)
-
-    yolo_pro_detector = YOLODetector(config, model_type="pro")
-    controller.set_yolo_pro_detector(yolo_pro_detector)
-
-    midas_depth_estimator = MiDaSDepthEstimator(config)
-    controller.set_midas_depth_estimator(midas_depth_estimator)
-
-    pro_depth_estimator = DepthProEstimator(config)
-    controller.set_pro_depth_estimator(pro_depth_estimator)
-
-    # Initialize system
-    if not controller.initialize():
-        logging.error("Failed to initialize controller")
-        return
-    
+        #------------------------------------------#
+        #       Add modules to controller          #
+        #------------------------------------------#
+        controller._primary_source_name = CAM_NAME
+        controller.add_module(RealSenseCamera(config, CAM_NAME))
+        controller.add_module(MiDaSDepthEstimator(config, MIDAS_NAME))
+        controller.add_module(DepthProEstimator(config, DEPTHPRO_NAME))
+        controller.add_module(YOLODetector(config, YOLO_DEPTH_NAME))
+        controller.add_module(YOLODetector(config,
+                                           YOLO_MIDAS_NAME,
+                                           SystemData.COLOR,
+                                           SystemData.MIDAS_ESTIMATED_DEPTH))
+        controller.add_module(YOLODetector(config,
+                                           YOLO_DEPTHPRO_NAME,
+                                           SystemData.COLOR,
+                                           SystemData.PRO_ESTIMATED_DEPTH))
+        
+        # Initialize controller
+        if not controller.initialize():
+            logging.critical("Failed to intialize SystemController")
+            return
 
 
-    ########################################
-    #             DATA STREAMS             #
-    ########################################
-    controller.enable_stream(StreamType.COLOR)
-    controller.enable_stream(StreamType.DEPTH)
-    #controller.enable_stream(StreamType.DEPTH_COLORMAP)
-    #controller.enable_stream(StreamType.DEPTH_DETECTIONS)
-    #controller.enable_stream(StreamType.DEPTH_COLORMAP_DETECTIONS)
-    controller.enable_stream(StreamType.MIDAS_ESTIMATED_DEPTH)
-    #controller.enable_stream(StreamType.MIDAS_ESTIMATED_DEPTH_DETECTIONS)
-    #controller.enable_stream(StreamType.PRO_ESTIMATED_DEPTH)
-    #controller.enable_stream(StreamType.PRO_ESTIMATED_DEPTH_DETECTIONS)
+        #------------------------------------------#
+        #             Enable modules               #
+        #------------------------------------------#
+        controller.enable_module(CAM_NAME)
+        #controller.enable_module(YOLO_DEPTH_NAME)
+        controller.enable_module(MIDAS_NAME)
+        #controller.enable_module(YOLO_MIDAS_NAME)
+        #controller.enable_module(DEPTHPRO_NAME)
+        #controller.enable_module(YOLO_DEPTHPRO_NAME)
 
 
+        # Start controller
+        if not controller.start():
+            logging.critical("Failed to start system")
+            return
+        
+        time.sleep(1.0)
 
-    ########################################
-    #               DETECTORS              #
-    ########################################
-    #controller.enable_detector("yolo")
-    #controller.enable_detector("yolo_midas")
-    #controller.enable_detector("yolo_pro")
+        #------------------------------------------#
+        #             Display window               #
+        #------------------------------------------#
+        window_name = "Synthetic depth detection"
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
-
-
-
-    # Start system
-    controller.start()
-    logging.info("Waiting for camera to initialize...")
-    time.sleep(1.0) 
-
-    # Create visualization window
-    cv2.namedWindow("Detection system", cv2.WINDOW_NORMAL)
-
-    try:
         while True:
-            data = controller.get_current_data()
-            logging.debug(f"Current data types: {list(data.keys())}")
+            current_data = controller.get_current_data() 
 
-            display_image = data[StreamType.MIDAS_ESTIMATED_DEPTH]
+            #if not current_data: 
+                 #time.sleep(0.05) 
+                 #continue
 
-            cv2.imshow("Detection system", display_image)
+            #logging.debug(f"Current data: {list(current_data.keys())}")
+            display_image = current_data[SystemData.DEPTH]
+            
+            # Display
+            if display_image is not None:
+                cv2.imshow(window_name, display_image)
+            else:
+                placeholder = np.zeros((480, 640, 3), dtype=np.uint8)
+                cv2.putText(placeholder, "Waiting for data...", (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                cv2.imshow(window_name, placeholder)
 
-            key = cv2.waitKey(1) & 0xFF
+            # Handle User Input
+            key = cv2.waitKey(10) & 0xFF 
             if key == ord('q'):
+                logging.info("Quit key pressed. Exiting loop.")
                 break
-
+    
     except KeyboardInterrupt:
-        logging.info("Interrupted by user")
+        logging.info("KeyboardInterrupt detected, exiting program")
     except Exception as e:
-        logging.error(f"Unexpected error: {e}", exc_info=True)
+        logging.error(f"Error: {e}")
     finally:
-        controller.stop()
-        cv2.destroyAllWindows()
+        if controller and controller.is_running:
+            controller.stop()
+            cv2.destroyAllWindows()
 
-
-if __name__ == "__main__":
+if __name__=="__main__":
     main()
+    

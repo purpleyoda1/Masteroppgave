@@ -1,6 +1,7 @@
 synthetic_data/
 all_code.txt
 std_data_structs.txt
+graveyard/
 
 # Ignore environment file with secrets
 .env
