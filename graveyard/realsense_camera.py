@@ -6,7 +6,7 @@ import datetime
 import time
 from enum import Enum, auto
 from typing import List, Dict, Tuple
-from modules.YOLODetector import YoloDetector
+from system.YOLODetector import YoloDetector
 from utilities import pad_to_square
 import matplotlib.pyplot as plt
 import logging
