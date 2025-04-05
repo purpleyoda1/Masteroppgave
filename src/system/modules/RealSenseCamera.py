@@ -100,6 +100,10 @@ class RealSenseCamera(SystemModule):
     def get_required_inputs(self) -> Set[str]:
         """Empty since it only produce frames"""
         return set()
+    
+    def get_dependency_inputs(self) -> Set[str]:
+        """Empty since it only produce frames"""
+        return set()
 
     def get_outputs(self) -> Set[str]:
         """Returns what StreamData this module produces"""

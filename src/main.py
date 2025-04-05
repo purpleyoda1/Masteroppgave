@@ -6,6 +6,9 @@ from system.modules.RealSenseCamera import RealSenseCamera
 from system.modules.YOLODetector import YOLODetector
 from system.modules.MiDaSDepthEstimator import MiDaSDepthEstimator
 from system.modules.DepthProEstimator import DepthProEstimator
+from system.modules.VisualizationModule import VisualizationModule
+from system.modules.DepthNormalizer import DepthNormalizer
+
 
 import logging
 import cv2
@@ -13,7 +16,7 @@ import time
 import numpy as np
 
 from config import Config
-from structs.Detection import Detection
+from system.structs.Detection import Detection
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -31,29 +34,50 @@ def main():
         #              Module names                #
         #------------------------------------------#
 
+        # Camera
         CAM_NAME = "RealSense_Camera"
+
+        # Estimators
         MIDAS_NAME = "MiDaS_estimator"
         DEPTHPRO_NAME = "DepthPro_estimator"
+
+        # Normalizers
+        NORM_DEPTH = "Normalizer_Depth"
+        NORM_MIDAS = "Normalizer_MiDaS"
+        NORM_PRO = "Normalizer_DepthPro"
+
+        # YOLO
         YOLO_DEPTH_NAME = "YOLO"
         YOLO_MIDAS_NAME = "YOLO_MiDaS"
         YOLO_DEPTHPRO_NAME = "YOLO_DepthPro"
 
+        # VISUALIZER
+        VIS_NAME = "Visualization_Module"
+
         #------------------------------------------#
         #       Add modules to controller          #
         #------------------------------------------#
+
+        # Camera
         controller._primary_source_name = CAM_NAME
         controller.add_module(RealSenseCamera(config, CAM_NAME))
+
+        # Estimators
         controller.add_module(MiDaSDepthEstimator(config, MIDAS_NAME))
-        controller.add_module(DepthProEstimator(config, DEPTHPRO_NAME))
-        controller.add_module(YOLODetector(config, YOLO_DEPTH_NAME))
-        controller.add_module(YOLODetector(config,
-                                           YOLO_MIDAS_NAME,
-                                           SystemData.COLOR,
-                                           SystemData.MIDAS_ESTIMATED_DEPTH))
-        controller.add_module(YOLODetector(config,
-                                           YOLO_DEPTHPRO_NAME,
-                                           SystemData.COLOR,
-                                           SystemData.PRO_ESTIMATED_DEPTH))
+        #controller.add_module(DepthProEstimator(config, DEPTHPRO_NAME))
+
+        # Normalizers
+        controller.add_module(DepthNormalizer(config, NORM_DEPTH,  SystemData.DEPTH, SystemData.NORM_DEPTH))
+        controller.add_module(DepthNormalizer(config, NORM_MIDAS, SystemData.MIDAS_ESTIMATED_DEPTH, SystemData.NORM_MIDAS, invert=True))
+        #controller.add_module(DepthNormalizer(config, NORM_PRO, SystemData.PRO_ESTIMATED_DEPTH, SystemData.NORM_PRO))
+
+        # YOLO
+        #controller.add_module(YOLODetector(config, YOLO_DEPTH_NAME))
+        controller.add_module(YOLODetector(config, YOLO_MIDAS_NAME, SystemData.MIDAS_ESTIMATED_DEPTH, SystemData.MIDAS_DETECTIONS))
+        #controller.add_module(YOLODetector(config, YOLO_DEPTHPRO_NAME, SystemData.PRO_ESTIMATED_DEPTH, SystemData.PRO_DETECTIONS))
+        
+        # Visualization
+        controller.add_module(VisualizationModule(config, VIS_NAME, view_target_height=480))
         
         # Initialize controller
         if not controller.initialize():
@@ -62,14 +86,12 @@ def main():
 
 
         #------------------------------------------#
-        #             Enable modules               #
+        #             Enable views                 #
         #------------------------------------------#
-        controller.enable_module(CAM_NAME)
-        #controller.enable_module(YOLO_DEPTH_NAME)
-        controller.enable_module(MIDAS_NAME)
-        #controller.enable_module(YOLO_MIDAS_NAME)
-        #controller.enable_module(DEPTHPRO_NAME)
-        #controller.enable_module(YOLO_DEPTHPRO_NAME)
+        controller.set_view(SystemData.VIS_DEPTH_COLORMAP, True)
+        controller.set_view(SystemData.VIS_MIDAS_COLORMAP, True)
+        controller.set_view(SystemData.VIS_MIDAS_COLORMAP_DETECTIONS, True)
+        
 
 
         # Start controller
@@ -88,12 +110,12 @@ def main():
         while True:
             current_data = controller.get_current_data() 
 
-            #if not current_data: 
-                 #time.sleep(0.05) 
-                 #continue
+            if not current_data: 
+                 time.sleep(0.05) 
+                 continue
 
-            #logging.debug(f"Current data: {list(current_data.keys())}")
-            display_image = current_data[SystemData.DEPTH]
+            logging.debug(f"Current data: {list(current_data.keys())}")
+            display_image = current_data.get(SystemData.VIS_MONTAGE)
             
             # Display
             if display_image is not None:

@@ -68,6 +68,9 @@ class DepthProEstimator(SystemModule):
     def get_required_inputs(self) -> Set[str]:
         return {SystemData.COLOR, SystemData.COLOR_INTRINSICS}
     
+    def get_dependency_inputs(self) -> Set[str]:
+        return {SystemData.COLOR, SystemData.COLOR_INTRINSICS}
+    
     def get_outputs(self) -> Set[str]:
         return {SystemData.PRO_ESTIMATED_DEPTH}
     

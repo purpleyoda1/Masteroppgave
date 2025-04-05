@@ -1,5 +1,5 @@
 # YOLO dataset configuration
-path: C:\Users\sondr\Documents\NTNU\Master\synthetic_data\training\MiDaS\
+path: C:\Users\sondr\Documents\NTNU\Master\synthetic_data\training\Normalized\
 train: images\train 
 val: images\val 
 test: images\test  

@@ -74,6 +74,9 @@ class MiDaSDepthEstimator(SystemModule):
     def get_required_inputs(self) -> Set[str]:
         return {SystemData.COLOR}
     
+    def get_dependency_inputs(self) -> Set[str]:
+        return {SystemData.COLOR}
+    
     def get_outputs(self) -> Set[str]:
         return {SystemData.MIDAS_ESTIMATED_DEPTH}
 

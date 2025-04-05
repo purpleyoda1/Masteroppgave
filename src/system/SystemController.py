@@ -39,7 +39,7 @@ class SystemController:
             self.logger.warning(f"Module {module.name} already in controller")
 
         self.modules[module.name] = module
-        self.module_states[module.name] = False
+        self.module_states[module.name] = True
         self.logger.info(f"Module {module.name} added to SystemController")
 
         # Reset processing order
@@ -115,7 +115,7 @@ class SystemController:
             module = self.modules[name]
             outputs = module.get_outputs()
             module_outputs[name] = outputs
-            module_inputs[name] = module.get_required_inputs()
+            module_inputs[name] = module.get_dependency_inputs()
             for data_type in outputs:
                 if data_type in output_map:
                     self.logger.warning(f"System has multiple sources for {data_type}. Might cause issues.")
@@ -134,8 +134,6 @@ class SystemController:
                     if name not in adj[producer]:
                         adj[producer].append(name)
                         in_degree[name] += 1
-                elif not producer and req not in self.get_primary_source_outputs():
-                    self.logger.warning(f"Module {name} requires {req} which is currently not provided")
         
         # Apply Kahn's algorithm
         queue: List[str] = [name for name in enabled_modules if in_degree[name] == 0]
@@ -227,16 +225,21 @@ class SystemController:
         self.is_running = False
         self.logger.info(f"SystemController stopped")
 
-    def enable_stream(self, stream_type: str) -> None:
-        """Adds a SystemData type to the desired streams"""
-        self.desired_streams.add(stream_type)
-        self.logger.info(f"External stream of {stream_type} enabled")
-    
-    def disable_stream(self, stream_type: str) -> None:
-        """Removes SystemData streamtype from desired streams"""
-        if stream_type in self.desired_streams:
-            self.desired_streams.remove(stream_type)
-            self.logger.info(f"External stream of {stream_type} disabled")
+    def set_view(self, view_key: str, active: bool, vis_name: str= "Visualization_Module") -> None:
+        """Set status of data streams in visualizer"""
+        if vis_name not in self.modules:
+            self.logger.warning(f"Visualizer not found, cant set view {vis_name}")
+        
+        visualizer = self.modules.get(vis_name)
+        visualizer.set_view(view_key, active)
+
+    def toggle_view(self, view_key: str, vis_name: str= "Visualization_Module") -> None:
+        """Toggle status of data streams in visualizer"""
+        if vis_name not in self.modules:
+            self.logger.warning(f"Visualizer not found, cant set view {vis_name}")
+        
+        visualizer = self.modules.get(vis_name)
+        visualizer.toggle_view(view_key)
 
     def get_current_data(self) -> Dict[str, Any]:
         """Retrieve a copy of the current SystemData"""
@@ -272,7 +275,8 @@ class SystemController:
                             continue
 
                         #self.logger.debug(f"Creating input subsets")
-                        input_subset = {key: cycle_data[key] for key in req}
+                        dep = module.get_dependency_inputs()
+                        input_subset = {key: cycle_data[key] for key in dep if key in cycle_data}
 
                         try:
                             #self.logger.debug(f"Processing data with {name}")
@@ -280,6 +284,7 @@ class SystemController:
 
                             if new_data:
                                 cycle_data.update(new_data)
+                                #self.logger.debug(f"Content of cycle_data: {cycle_data.keys()}")
                         except Exception as e:
                             self.logger.error(f"Error processing {name}: {e}")
                         
@@ -299,32 +304,3 @@ class SystemController:
             self.logger.error(f"Error in internal processing loop: {e}")
             return 
         
-
-
-
-
-
-
-
-
-
-
-    def _simple_test_loop(self):
-        my_name = threading.current_thread().name
-        print(f"!!! THREAD {my_name}: Entered _simple_test_loop !!! [Direct Print]", file=sys.stderr, flush=True)
-        self.logger.critical(f"!!! THREAD {my_name}: Entered _simple_test_loop !!! [Logging]")
-        counter = 0
-        try:
-            while not self.stop_event.is_set() and counter < 50: # Limit loops for testing
-                print(f"THREAD {my_name}: Simple loop iteration {counter}", file=sys.stderr, flush=True)
-                self.logger.info(f"THREAD {my_name}: Simple loop iteration {counter}")
-                counter += 1
-                time.sleep(0.1) # Sleep briefly
-            print(f"THREAD {my_name}: Simple loop finished.", file=sys.stderr, flush=True)
-            self.logger.info(f"THREAD {my_name}: Simple loop finished.")
-        except Exception as e:
-             print(f"THREAD {my_name}: *** SIMPLE LOOP EXCEPTION ***: {e}", file=sys.stderr, flush=True)
-             self.logger.exception(f"THREAD {my_name}: Exception in simple loop: {e}")
-        finally:
-            print(f"!!! THREAD {my_name}: Exiting _simple_test_loop (finally block) !!! [Direct Print]", file=sys.stderr, flush=True)
-            self.logger.critical(f"!!! THREAD {my_name}: Exiting _simple_test_loop (finally block) !!!")

@@ -2,7 +2,7 @@
 
 from ..SystemModule import SystemModule
 from ..SystemData import SystemData
-from structs.Detection import Detection
+from ..structs.Detection import Detection
 
 import os
 import cv2
@@ -79,6 +79,16 @@ class YOLODetector(SystemModule):
     def get_required_inputs(self) -> Set[str]:
         return {self._input_stream_type}
     
+    def get_dependency_inputs(self) -> Set[str]:
+        return {
+            SystemData.DEPTH,
+            SystemData.MIDAS_ESTIMATED_DEPTH,
+            SystemData.PRO_ESTIMATED_DEPTH,
+            SystemData.NORM_DEPTH,
+            SystemData.NORM_MIDAS,
+            SystemData.NORM_PRO
+            }
+    
     def get_outputs(self) -> Set[str]:
         return {self._output_stream_type}
     
@@ -90,7 +100,7 @@ class YOLODetector(SystemModule):
             self.logger.debug(f"{self.name} not initialized, skipping process")
             return None
         
-        input_image = Optional[np.ndarray] = data.get(self._input_stream_type)
+        input_image = data.get(self._input_stream_type)
         if input_image is None:
             self.logger.debug(f"Required input {self._input_stream_type} missing")
             return {self._output_stream_type: []}

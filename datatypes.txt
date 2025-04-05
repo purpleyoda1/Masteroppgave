@@ -1,0 +1,5 @@
+Realsense
+    depth: uint16
+
+DepthPro/MiDaS
+    float32

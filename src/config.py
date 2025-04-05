@@ -31,7 +31,7 @@ class Config:
     @property
     def yolo_pro_model_path(self) -> str:
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        relative_path = "src\\model_training\\runs\\detect\\raw_2003\\weights\\best.pt"
+        relative_path = "src\\model_training\\runs\\detect\\v11small\\best.pt"
         return os.path.join(base_path, relative_path)
     
     # Directories
@@ -42,7 +42,7 @@ class Config:
         return os.path.join(base_path, relative_path)
     
     # MiDaS model
-    midas_model_type: str = "DPT_Hybrid"
+    midas_model_type: str = "DPT_Large"  # DPT_Large or DPT_Hybrid
 
     # Depth Pro
     depth_pro_rel_weight_path: str = "external/depth-pro/checkpoints/depth_pro.pt"

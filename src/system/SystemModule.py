@@ -56,6 +56,10 @@ class SystemModule(ABC):
         """Set of StreamType strings that the module needs to function"""
         pass
 
+    def get_dependency_inputs(self) -> Set[str]:
+        """Set of SystemData the module might or can use"""
+        pass
+
     @abstractmethod
     def get_outputs(self) -> Set[str]:
         """Set of StreamType strings the module produces"""
