@@ -9,12 +9,15 @@ from system.SystemData import SystemData
 @dataclass
 class Config:
     # Realsense camera
-    depth_res = 240
-    color_res = 848
+    depth_res = 640
+    color_res = 640
 
     if depth_res == 240:
         depth_stream_width: int = 424
         depth_stream_height: int = 240
+    elif depth_res == 640:
+        depth_stream_width: int = 640
+        depth_stream_height: int = 480
     depth_stream_fps: int = 6
 
     if color_res == 424:

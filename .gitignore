@@ -1,8 +1,9 @@
-training_data/
+training_data/*
+!training_data/real_world/
 all_code.txt
 std_data_structs.txt
-graveyard/
-src/model_training/runs
+graveyard/*
+src/model_training/runs/*
 src/model_training/yolo11l.pt
 src/model_training/yolo11m.pt
 src/model_training/yolo11n.pt
