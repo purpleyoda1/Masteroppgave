@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 import time
+import logging
+
+detection_logger = logging.getLogger(f"DetectionClass")
 
 @dataclass
 class Detection:
@@ -20,7 +23,7 @@ class Detection:
     bbox2D: Optional[List[float]] = None    # [x1, y1, x2, y2]
     bbox3D: Optional[List[float]] = None    # [x, y, z, width, height, depth, roll, pitch, yaw]
     center3D: Optional[List[float]] = None  # [x, y, z]
-    point_indices: Optional[List[int]] = None
+    position_camera_frame: Optional[List[float]] = None
 
     # If addinional metadata is needed
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -38,3 +41,28 @@ class Detection:
             x1, y1, x2, y2 = self.bbox2D
             return (x2 - x1) * (y2 - y1)
         return None
+    
+    def to_bytetrack_format(self) -> Optional[List[float]]:
+        """
+        Returns detection on a format compatible with ByteTrack:
+        [x1, y1, x2, y2, score, class_id]
+        """
+        if (self.bbox2D is not None and
+            len(self.bbox2D) == 4 and
+            self.conf is not None and
+            self.class_id is not None):
+            try:
+                x1, y1, x2, y2 = map(float, self.bbox2D)
+                score = float(self.conf)
+                cls_id = float(self.class_id)
+
+                bytetrack_input = [x1, y1, x2, y2, score, cls_id]
+                return bytetrack_input
+            
+            except Exception as e:
+                detection_logger.error(f"Error converting detection to ByteTrack format: {e}")
+                return None
+            
+        else:
+            detection_logger.error(f"Missing data for bytetrack format")
+            return None

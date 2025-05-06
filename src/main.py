@@ -8,7 +8,8 @@ from system.modules.MiDaSDepthEstimator import MiDaSDepthEstimator
 from system.modules.DepthProEstimator import DepthProEstimator
 from system.modules.VisualizationModule import VisualizationModule
 from system.modules.DepthNormalizer import DepthNormalizer
-
+from system.modules.TrackingModule import TrackingModule
+from system.modules.FrameSaver import FrameSaver
 
 import logging
 import cv2
@@ -19,7 +20,7 @@ from config import Config
 from system.structs.Detection import Detection
 
 def main():
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logging.info("Starting main()")
     controller = None
 
@@ -50,9 +51,16 @@ def main():
         YOLO_DEPTH_NAME = "YOLO"
         YOLO_MIDAS_NAME = "YOLO_MiDaS"
         YOLO_DEPTHPRO_NAME = "YOLO_DepthPro"
+        YOLO_NORM_NAME = "YOLO_Normalized"
+
+        # Tracker
+        TRACKER_NAME = "TrackingModule"
 
         # VISUALIZER
         VIS_NAME = "Visualization_Module"
+
+        # SAVER
+        SAVE_NAME = "FrameSaver"
 
         #------------------------------------------#
         #       Add modules to controller          #
@@ -72,12 +80,22 @@ def main():
         #controller.add_module(DepthNormalizer(config, NORM_PRO, SystemData.PRO_ESTIMATED_DEPTH, SystemData.NORM_PRO))
 
         # YOLO
-        #controller.add_module(YOLODetector(config, YOLO_DEPTH_NAME))
-        controller.add_module(YOLODetector(config, YOLO_MIDAS_NAME, SystemData.MIDAS_ESTIMATED_DEPTH, SystemData.MIDAS_DETECTIONS))
+        controller.add_module(YOLODetector(config, YOLO_DEPTH_NAME, {SystemData.DEPTH: SystemData.DEPTH_DETECTIONS}))
+        controller.add_module(YOLODetector(config, YOLO_NORM_NAME, {SystemData.NORM_MIDAS: SystemData.MIDAS_DETECTIONS}))
         #controller.add_module(YOLODetector(config, YOLO_DEPTHPRO_NAME, SystemData.PRO_ESTIMATED_DEPTH, SystemData.PRO_DETECTIONS))
+        #controller.add_module(YOLODetector(config, YOLO_NORM_NAME, {SystemData.NORM_MIDAS: SystemData.VIS_MIDAS_COLORMAP_DETECTIONS,
+        #                                                            SystemData.NORM_PRO: SystemData.VIS_PRO_COLORMAP_DETECTIONS}))
         
+        # Tracker
+        controller.add_module(TrackingModule(config, TRACKER_NAME, {SystemData.DEPTH_DETECTIONS: SystemData.TRACKED_DEPTH_DETECTIONS,
+                                                                    SystemData.MIDAS_DETECTIONS: SystemData.TRACKED_MIDAS_DETECTIONS,
+                                                                    SystemData.PRO_DETECTIONS: SystemData.TRACKED_PRO_DETECTIONS}))
+
+        # Saver
+        controller.add_module(FrameSaver(config, SAVE_NAME))
+
         # Visualization
-        controller.add_module(VisualizationModule(config, VIS_NAME, view_target_height=480))
+        controller.add_module(VisualizationModule(config, VIS_NAME))
         
         # Initialize controller
         if not controller.initialize():
@@ -89,8 +107,19 @@ def main():
         #             Enable views                 #
         #------------------------------------------#
         controller.set_view(SystemData.VIS_DEPTH_COLORMAP, True)
+        controller.set_view(SystemData.VIS_DEPTH_COLORMAP_DETECTIONS, True)
+        controller.set_view(SystemData.VIS_DEPTH_COLORMAP_TRACKED_DETECTIONS, True)
+
+
         controller.set_view(SystemData.VIS_MIDAS_COLORMAP, True)
         controller.set_view(SystemData.VIS_MIDAS_COLORMAP_DETECTIONS, True)
+        controller.set_view(SystemData.VIS_MIDAS_COLORMAP_TRACKED_DETECTIONS, True)
+
+
+        #controller.set_view(SystemData.VIS_PRO_COLORMAP, True)
+        #controller.set_view(SystemData.VIS_PRO_COLORMAP_DETECTIONS, True)
+
+        
         
 
 
@@ -114,7 +143,7 @@ def main():
                  time.sleep(0.05) 
                  continue
 
-            logging.debug(f"Current data: {list(current_data.keys())}")
+            #logging.debug(f"Current data: {list(current_data.keys())}")
             display_image = current_data.get(SystemData.VIS_MONTAGE)
             
             # Display
@@ -130,6 +159,10 @@ def main():
             if key == ord('q'):
                 logging.info("Quit key pressed. Exiting loop.")
                 break
+
+            if key == ord('s'):
+                logging.info(f"Save key detected")
+                controller.request_save()
     
     except KeyboardInterrupt:
         logging.info("KeyboardInterrupt detected, exiting program")

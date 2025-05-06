@@ -33,6 +33,9 @@ class SystemController:
         self.stop_event = threading.Event()
         self.data_lock = threading.Lock()
 
+        # Frame counter
+        self.sys_frame_counter: int = 0
+
     def add_module(self, module: SystemModule) -> None:
         """Register module in controller"""
         if module.name in self.modules:
@@ -229,6 +232,7 @@ class SystemController:
         """Set status of data streams in visualizer"""
         if vis_name not in self.modules:
             self.logger.warning(f"Visualizer not found, cant set view {vis_name}")
+            return
         
         visualizer = self.modules.get(vis_name)
         visualizer.set_view(view_key, active)
@@ -237,9 +241,38 @@ class SystemController:
         """Toggle status of data streams in visualizer"""
         if vis_name not in self.modules:
             self.logger.warning(f"Visualizer not found, cant set view {vis_name}")
+            return
         
         visualizer = self.modules.get(vis_name)
         visualizer.toggle_view(view_key)
+
+    def set_tracker(self, input_key: str, active: bool, reset_tracker: bool = False, tracker_module_name: str = "TrackingModule") -> None:
+        """Set status of tracking stream""" 
+        if tracker_module_name not in self.modules:
+            self.logger.warning(f"Tracker not found, cant set tracking of {input_key}")
+            return
+        
+        tracker = self.modules.get(tracker_module_name)
+        tracker.set_tracking(input_key, active, reset_tracker)
+    
+    def get_active_trackers(self, tracker_module_name: str = "TrackingModule") -> Set[str]:
+        """Retrieve currently active trackers"""
+        if tracker_module_name not in self.modules:
+            self.logger.warning(f"Tracker not found, cant retrieve active views")
+            return
+        
+        tracker = self.modules.get(tracker_module_name)
+        return tracker.get_active()
+
+    def request_save(self, saver_module_name: str = "FrameSaver") -> None:
+        """Send request to saver module"""
+        if saver_module_name not in self.modules:
+            self.logger.warning(f"Saver not found, cant send request")
+            return
+        
+        saver = self.modules.get(saver_module_name)
+        saver.request_save()
+
 
     def get_current_data(self) -> Dict[str, Any]:
         """Retrieve a copy of the current SystemData"""
@@ -257,6 +290,7 @@ class SystemController:
             while not self.stop_event.is_set():
                 cycle_start_time = time.perf_counter()
                 cycle_data: Dict[str, Any] = {}
+                cycle_data[SystemData.SYS_FRAME_ID] = self.sys_frame_counter
 
                 try:
                     # Run modules processing loops in correct order
@@ -285,6 +319,7 @@ class SystemController:
                             if new_data:
                                 cycle_data.update(new_data)
                                 #self.logger.debug(f"Content of cycle_data: {cycle_data.keys()}")
+                            self.logger.debug(f"Currently available data: {cycle_data.keys()}")
                         except Exception as e:
                             self.logger.error(f"Error processing {name}: {e}")
                         
@@ -298,6 +333,7 @@ class SystemController:
                     self.logger.error(f"Error in processing loop: {e}")
                     time.sleep(0.5)
                 
+                self.sys_frame_counter += 1
                 cycle_end_time = time.perf_counter()
                 # TODO: complete cycle timing logic
         except Exception as e:

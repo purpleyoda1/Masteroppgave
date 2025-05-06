@@ -21,8 +21,7 @@ class YOLODetector(SystemModule):
     def __init__(self, 
                  config: Any, 
                  module_name: str, 
-                 input_stream_type: str = SystemData.DEPTH,
-                 output_stream_type: str = SystemData.DEPTH_DETECTIONS):
+                 stream_map: Dict[str, str]):
         """
         Initializes chosen YOLO depth detector
         """
@@ -32,11 +31,11 @@ class YOLODetector(SystemModule):
         if YOLO is None:
             raise ImportError("Ultralytics library not found")
         
-        self._input_stream_type = input_stream_type
-        self._output_stream_type = output_stream_type
+        self._stream_map = stream_map # Input -> Output
         self.model_path: Optional[str] = None
         self.confidence_threshold = self._config.confidence_threshold
         self.iou_treshold = self._config.iou_treshold
+        self.class_names = self._config.class_names
         self.model = None
         self.is_initialized = False
     
@@ -73,24 +72,19 @@ class YOLODetector(SystemModule):
             self.model_path = self._config.yolo_midas_model_path
         elif self.name == "YOLO_DepthPro":
             self.model_path = self._config.yolo_pro_model_path
+        elif self.name == "YOLO_Normalized":
+            self.model_path = self._config.yolo_normalized_model_path
         else:
             self.model_path = self._config.yolo_model_path
 
     def get_required_inputs(self) -> Set[str]:
-        return {self._input_stream_type}
+        return set()
     
     def get_dependency_inputs(self) -> Set[str]:
-        return {
-            SystemData.DEPTH,
-            SystemData.MIDAS_ESTIMATED_DEPTH,
-            SystemData.PRO_ESTIMATED_DEPTH,
-            SystemData.NORM_DEPTH,
-            SystemData.NORM_MIDAS,
-            SystemData.NORM_PRO
-            }
+        return set(self._stream_map.keys())
     
     def get_outputs(self) -> Set[str]:
-        return {self._output_stream_type}
+        return set(self._stream_map.values())
     
     def _process_internal(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
@@ -100,19 +94,26 @@ class YOLODetector(SystemModule):
             self.logger.debug(f"{self.name} not initialized, skipping process")
             return None
         
-        input_image = data.get(self._input_stream_type)
-        if input_image is None:
-            self.logger.debug(f"Required input {self._input_stream_type} missing")
-            return {self._output_stream_type: []}
-        
-        try:
-            detections_list = self._detect(input_image)
-        except Exception as e:
-            self.logger.error(f"Error applying {self.name} to input image")
-            detections_list = []
+        output_data: Dict[str, Any] = {}
 
-        return {self._output_stream_type: detections_list}
-    
+        for input_key, output_key in self._stream_map.items():
+            input_image = data.get(input_key)
+
+            if input_image is None:
+                self.logger.debug(f"Required input {input_key} missing")
+                output_data[output_key] = []
+                continue
+            
+            try:
+                detections_list = self._detect(input_image)
+                #self.logger.debug(f"Detected {len(detections_list)} objects in {input_key}")
+                output_data[output_key] = detections_list
+            except Exception as e:
+                self.logger.error(f"Error applying {self.name} to input image: {e}")
+                output_data[output_key] = []
+
+        return output_data
+     
     def _detect(self, image: np.ndarray) -> List[Detection]:
         """
         Internal function for applying detection to image
@@ -135,11 +136,16 @@ class YOLODetector(SystemModule):
             detections = []
             for result in results:
                 if result.boxes == None: continue  
+                model_names = result.names
                 for box in result.boxes:
                     x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int).tolist()
                     conf_score = float(box.conf[0].cpu().numpy())
                     class_id = int(box.cls[0].cpu().numpy())
-                    label = result.names[class_id] if result.names and class_id in result.names else "unkown"
+                    label = self.class_names.get(class_id)
+                    if label == None and model_names:
+                        label = model_names.get(class_id)
+                    elif label is None:
+                        label = f"{class_id}"
 
                     detection = Detection(
                         class_id=class_id,
@@ -154,7 +160,6 @@ class YOLODetector(SystemModule):
         except Exception as e:
             self.logger.error(f"Error proccessing detection data")
 
-        self.logger.debug(f"Detected {len(detections)} objects in {self._input_stream_type}")
         return detections
     
     def stop(self) -> None:

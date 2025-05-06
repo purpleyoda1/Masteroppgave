@@ -25,6 +25,11 @@ class SystemData:
     NORM_MIDAS = "norm_midas"
     NORM_PRO = "norm_pro"
 
+    # Tracking
+    TRACKED_DEPTH_DETECTIONS = "tracked_depth_detections"
+    TRACKED_MIDAS_DETECTIONS = "tracked_midas_detections"
+    TRACKED_PRO_DETECTIONS = "tracked_pro_detections"
+
     # Visualizer
     VIS_DEPTH_COLORMAP = "vis_depth_colormap"
     VIS_MIDAS_COLORMAP = "vis_midas_colormap"
@@ -32,4 +37,10 @@ class SystemData:
     VIS_DEPTH_COLORMAP_DETECTIONS = "vis_depth_colormap_detections"
     VIS_MIDAS_COLORMAP_DETECTIONS = "vis_midas_colormap_detections"
     VIS_PRO_COLORMAP_DETECTIONS = "vis_pro_colormap_detections"
+    VIS_DEPTH_COLORMAP_TRACKED_DETECTIONS = "vis_depth_colormap_tracked_detections"
+    VIS_MIDAS_COLORMAP_TRACKED_DETECTIONS = "vis_midas_colormap_tracked_detections"
+    VIS_PRO_COLORMAP_TRACKED_DETECTIONS = "vis_pro_colormap_tracked_detections"
     VIS_MONTAGE = "vis_montage"
+
+    # Frame
+    SYS_FRAME_ID = "sys_frame_id"

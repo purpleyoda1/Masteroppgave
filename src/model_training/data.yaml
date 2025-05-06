@@ -1,9 +1,9 @@
 # YOLO dataset configuration
-path: C:\Users\sondr\Documents\NTNU\Master\synthetic_data\training\Normalized\
+path: C:\Users\sondr\Documents\NTNU\Master\training_data\training\480_realsense\
 train: images\train 
 val: images\val 
 test: images\test  
 
 # Classes
-nc: 1
-names: ['cylinder'] 
+nc: 3
+names: ['Capacitor', 'Bracket', 'Screw'] 

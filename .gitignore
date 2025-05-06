@@ -1,7 +1,15 @@
-synthetic_data/
+training_data/
 all_code.txt
 std_data_structs.txt
 graveyard/
+src/model_training/runs
+src/model_training/yolo11l.pt
+src/model_training/yolo11m.pt
+src/model_training/yolo11n.pt
+src/model_training/yolo11s.pt
+
+
+
 
 # Ignore environment file with secrets
 .env

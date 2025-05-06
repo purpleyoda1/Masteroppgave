@@ -18,22 +18,28 @@ class VisualizationModule(SystemModule):
     """
     def __init__(self, 
                  config: Any, 
-                 module_name: str = "Visualization_Module", 
-                 view_target_height: int = 240,
-                 canvas_height: int = 1080, 
-                 canvas_width: int = 1920):
+                 module_name: str = "Visualization_Module"):
         """Initialize Visualization module"""
         super().__init__(config, module_name)
         self.logger = logging.getLogger(self.name)
-        self._view_target_height = view_target_height
-        self._canvas_height = canvas_height
-        self._canvas_width = canvas_width
+        self._view_target_height = getattr(self._config, "vis_view_target_height", 240)
+        self._canvas_height = getattr(self._config, "vis_canvas_height", 1080)
+        self._canvas_width = getattr(self._config, "vis_canvas_widt", 1920)
         
         self.is_initialized = False
-        self.detection_color = (255, 192, 203)
         self._vis_lock = threading.Lock()
         
+        # Colormap settings
+        self._apply_colorma_flag = getattr(self._config, "vis_apply_colormap", True)
+        self._colormap = cv2.COLORMAP_JET
+
+        # Detection colors
+        self._class_colors = getattr(self._config, "vis_class_colors", {})
+        self._default_color = getattr(self._config, "vis_default_detection_color", (255, 0, 200))
+
+        # Information about different views
         self._active_views: Set[str] = {SystemData.COLOR}
+
         self._ALL_POSSBLE_VIEWS = {
             SystemData.COLOR,
             SystemData.DEPTH,
@@ -42,14 +48,16 @@ class VisualizationModule(SystemModule):
             SystemData.VIS_PRO_COLORMAP,
             SystemData.VIS_DEPTH_COLORMAP_DETECTIONS,
             SystemData.VIS_MIDAS_COLORMAP_DETECTIONS,
-            SystemData.VIS_PRO_COLORMAP_DETECTIONS
+            SystemData.VIS_PRO_COLORMAP_DETECTIONS,
+            SystemData.VIS_DEPTH_COLORMAP_TRACKED_DETECTIONS,
+            SystemData.VIS_MIDAS_COLORMAP_TRACKED_DETECTIONS,
+            SystemData.VIS_PRO_COLORMAP_TRACKED_DETECTIONS
         }
 
         # Views that simply should be passed on
         self._pass_on_views: Set[str] = {SystemData.COLOR,
                                         SystemData.DEPTH}
         # Views that need colormap
-        self._colormap = cv2.COLORMAP_JET
         self._colormap_inputs: Dict[str, str] = {
             SystemData.VIS_DEPTH_COLORMAP: SystemData.NORM_DEPTH,
             SystemData.VIS_MIDAS_COLORMAP: SystemData.NORM_MIDAS,
@@ -60,6 +68,13 @@ class VisualizationModule(SystemModule):
             SystemData.VIS_DEPTH_COLORMAP_DETECTIONS: (SystemData.NORM_DEPTH, SystemData.DEPTH_DETECTIONS),
             SystemData.VIS_MIDAS_COLORMAP_DETECTIONS: (SystemData.NORM_MIDAS, SystemData.MIDAS_DETECTIONS),
             SystemData.VIS_PRO_COLORMAP_DETECTIONS: (SystemData.NORM_PRO, SystemData.PRO_DETECTIONS)
+        }
+
+        # Tracked detection overlays
+        self._tracked_detection_views: Dict[str, Tuple[str, str]] = {
+            SystemData.VIS_DEPTH_COLORMAP_TRACKED_DETECTIONS: (SystemData.NORM_DEPTH, SystemData.TRACKED_DEPTH_DETECTIONS),
+            SystemData.VIS_MIDAS_COLORMAP_TRACKED_DETECTIONS: (SystemData.NORM_MIDAS, SystemData.TRACKED_MIDAS_DETECTIONS),
+            SystemData.VIS_PRO_COLORMAP_TRACKED_DETECTIONS: (SystemData.NORM_PRO, SystemData.TRACKED_PRO_DETECTIONS)
         }
 
     def set_view(self, view_key: str, active: bool) -> None:
@@ -116,17 +131,13 @@ class VisualizationModule(SystemModule):
         dependency_inputs = set(self._pass_on_views) \
                                 .union(set(self._colormap_inputs.values())) \
                                 .union({base for base, det in self._detection_views.values()}) \
-                                .union({det for base, det in self._detection_views.values()})           
+                                .union({det for base, det in self._detection_views.values()})  \
+                                .union({base for base, det in self._tracked_detection_views.values()}) \
+                                .union({det for base, det in self._tracked_detection_views.values()})           
         return dependency_inputs
     
     def get_outputs(self) -> Set[str]:
-        return {SystemData.VIS_DEPTH_COLORMAP,
-                SystemData.VIS_MIDAS_COLORMAP,
-                SystemData.VIS_PRO_COLORMAP,
-                SystemData.VIS_DEPTH_COLORMAP_DETECTIONS,
-                SystemData.VIS_MIDAS_COLORMAP_DETECTIONS,
-                SystemData.VIS_PRO_COLORMAP_DETECTIONS,
-                SystemData.VIS_MONTAGE}
+        return set(SystemData.VIS_MONTAGE)
     
     def _apply_colormap(self, depth_map: np.ndarray) -> Optional[np.ndarray]:
         """Normalizes depth map then applies colormap"""
@@ -142,7 +153,7 @@ class VisualizationModule(SystemModule):
             depth_map = depth_map.astype(np.uint8)
             colormapped = cv2.applyColorMap(depth_map, self._colormap)
             
-            return colormapped
+            return colormapped if self._apply_colorma_flag else depth_map
         
         except Exception as e:
             self.logger.error(f"Error coloring depthmap: {e}")
@@ -170,7 +181,7 @@ class VisualizationModule(SystemModule):
                     conf = det.conf if det.conf is not None else 0.0
                     source = det.source if det.source else "unknown"
 
-                    bbox_color = self.detection_color
+                    bbox_color = self._class_colors.get(label, self._default_color)
                     text_color = (0, 0, 0)
 
                     cv2.rectangle(output_image, (x1, y1), (x2, y2), bbox_color, 2)
@@ -193,7 +204,7 @@ class VisualizationModule(SystemModule):
                             )
                     cv2.putText(output_image, 
                                 label_text, 
-                                ((min(output_image.shape[0] - baseline), text_y - baseline // 2), bg_x1), 
+                                (bg_x1 + 2, bg_y2 - baseline - 2), 
                                 cv2.FONT_HERSHEY_SIMPLEX,
                                 0.5, 
                                 text_color, 
@@ -280,6 +291,46 @@ class VisualizationModule(SystemModule):
             self.logger.error(f"Error resizing image: {e}")
             return None
         
+    def _add_label_to_view(self, image: np.ndarray, label_text: str) -> np.ndarray:
+        """Draws a label with background onto the top-left corner of an image."""
+        if image is None:
+            return None 
+
+        try:
+            (text_width, text_height), baseline = cv2.getTextSize(label_text, 
+                                                                  cv2.FONT_HERSHEY_SIMPLEX, 
+                                                                  0.5, 
+                                                                  1)
+            
+            # Calculate background rectangle coordinates
+            bg_x1 = 0
+            bg_y1 = 0
+            bg_x2 = text_width + 5 * 2
+            bg_y2 = text_height + baseline + 5 * 2
+            
+            # Ensure background doesn't exceed image width 
+            bg_x2 = min(bg_x2, image.shape[1])
+            bg_y2 = min(bg_y2, image.shape[0])
+
+            # Draw background rectangle
+            cv2.rectangle(image, (bg_x1, bg_y1), (bg_x2, bg_y2), 
+                         (0,0,0), cv2.FILLED)
+
+            # Calculate text coordinates 
+            text_x = bg_x1 + 5
+            text_y = bg_y1 + text_height + 5 
+            
+            # Draw text
+            cv2.putText(image, label_text, (text_x, text_y), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
+                        (255,255,255), 1, cv2.LINE_AA)
+                        
+            return image
+
+        except Exception as e:
+            self.logger.error(f"Error adding label '{label_text}' to view: {e}")
+            return image
+           
     def _create_montage(self, views: List[np.ndarray], montage_width: int, montage_height: int) -> Optional[np.ndarray]:
         """Grid montage of active views"""
         if not views:
@@ -363,6 +414,8 @@ class VisualizationModule(SystemModule):
             return None
         
         output_data: Dict[str, Any] = {}
+        #self.logger.debug(f"Data: {data.keys()}")
+        #self.logger.debug(f"Active keys: {self._active_views}")
 
         
         for key in self._active_views:
@@ -386,6 +439,25 @@ class VisualizationModule(SystemModule):
                     if depth_map is not None:
                         if detection_key:
                             detections = data.get(detection_key)
+
+                            if detections:
+                                output_data[key] = self._draw_detections(depth_map, detections)
+                            else:
+                                output_data[key] = depth_map
+                        else:
+                            self.logger.debug(f"Missing input: {detection_key}")
+                else:
+                    self.logger.debug(f"Missing input: {depth_map_key}")
+
+            # Tracked detection overlays
+            elif key in self._tracked_detection_views:
+                depth_map_key, detection_key = self._tracked_detection_views.get(key)
+                if depth_map_key:
+                    depth_map = self._apply_colormap(data.get(depth_map_key))
+                    if depth_map is not None:
+                        if detection_key:
+                            detections = data.get(detection_key)
+
                             if detections:
                                 output_data[key] = self._draw_detections(depth_map, detections)
                             else:
@@ -403,7 +475,9 @@ class VisualizationModule(SystemModule):
             view = output_data[key]
             if view is not None:
                 resized_view = self._resize_for_montage(view, self._view_target_height)
-                views_for_montage.append(resized_view)
+                if resized_view is not None:
+                    labeled_view = self._add_label_to_view(resized_view, key)
+                    views_for_montage.append(resized_view)
 
         vis_montage = self._create_montage(views_for_montage, self._canvas_width, self._canvas_height)
         output_data[SystemData.VIS_MONTAGE] = vis_montage

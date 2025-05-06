@@ -28,9 +28,9 @@ class DepthNormalizer(SystemModule):
         self._input_stream_type = input_stream_type
         self._output_stream_type = output_stream_type
         self._invert = invert
-        self._target_min = target_min
-        self._target_max = target_max
-        self._output_dtype = output_dtype
+        self._target_min = getattr(self._config, "norm_target_min", 0.0)
+        self._target_max = getattr(self._config, "norm_target_max", 255.0)
+        self._output_dtype = getattr(self._config, "norm_output_dtype", np.uint8)
         self._range = target_max - target_min
 
         self.is_initialized = False

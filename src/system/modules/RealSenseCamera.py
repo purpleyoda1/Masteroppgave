@@ -7,6 +7,7 @@ import numpy as np
 import pyrealsense2 as rs
 from typing import  Optional, Any, Dict, Set
 import logging
+import time
 
 class RealSenseCamera(SystemModule):
     """
@@ -37,6 +38,12 @@ class RealSenseCamera(SystemModule):
         self.color_h = getattr(self._config, "color_stream_height", 240)
         self.color_fps = getattr(self._config, "color_stream_fps", 15)
 
+        self.enable_imu = getattr(self._config, "realsense_enable_imu", False)
+        self.imu_accel_fps = getattr(self._config, "imu_accel_fps", 100)
+        self.imu_gyro_fps = getattr(self._config, "imu_gyro_fps", 200)
+        self.imu_print_interval = getattr(self._config, "imu_print_interval", 1.0)
+        self.last_imu_print_time = 0.0
+
 
     def initialize(self, config: Any) -> bool:
         """Initialize module"""
@@ -66,6 +73,20 @@ class RealSenseCamera(SystemModule):
                 self.color_fps
             )
 
+            # Enable IMU stream
+            if self.enable_imu:
+                try:
+                    rs_config.enable_stream(
+                        rs.stream.accel,
+                        rs.format.motion_xyz32f,
+                        self.imu_accel_fps
+                    )
+                    
+                    self.logger.info(f"IMU stream enabled")
+                except Exception as e:
+                    self.logger.error(f"Failed to initialize IMU streams: {e}")
+                    self.enable_imu = False
+
             self.logger.debug("Starting RealSense pipeline")
             self.profile = self.pipeline.start(rs_config)
 
@@ -79,10 +100,12 @@ class RealSenseCamera(SystemModule):
 
             self.depth_intrinsics = self.profile.get_stream(rs.stream.depth).as_video_stream_profile().get_intrinsics()
             self.color_intrinsics = self.profile.get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
+            self.logger.info(f"Depth intrinsics: {self.depth_intrinsics}")
+            self.logger.info(f"Color intrinsics: {self.color_intrinsics}")
             
             # Wait for camera to start up properly
             for _ in range(30):
-                self.pipeline.wait_for_frames()
+                self.pipeline.wait_for_frames(20000)
 
             self.logger.info(f"{self.name} initialized succesfully")
             self.is_initialized = True
@@ -125,6 +148,18 @@ class RealSenseCamera(SystemModule):
         
         try:
             frames = self.pipeline.wait_for_frames()
+            # Print IMU data if enabled
+            accel = None
+            current_time = time.monotonic()
+            time_since_print = current_time - self.last_imu_print_time
+            if self.enable_imu:
+                accel_frame = frames.first_or_default(rs.stream.accel, rs.format.motion_xyz32f)
+                if accel_frame and time_since_print > self.imu_print_interval: 
+                    accel = accel_frame.as_motion_frame().get_motion_data()
+                    self.logger.info(f"IMU data: x: {accel.x:.3f} y: {accel.y:.3f} z: {accel.z:.3f}")
+                    self.last_imu_print_time = current_time
+
+
             aligned_frames = self.align.process(frames)
 
             depth_frame = aligned_frames.get_depth_frame()
