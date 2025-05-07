@@ -3,6 +3,8 @@ training_data/*
 !training_data/real_world/*
 !training_data/real_world/**
 
+synthetic_data/*
+
 all_code.txt
 std_data_structs.txt
 graveyard/*
