@@ -5,7 +5,7 @@ from system.SystemData import SystemData
 from system.modules.RealSenseCamera import RealSenseCamera
 from system.modules.YOLODetector import YOLODetector
 from system.modules.MiDaSDepthEstimator import MiDaSDepthEstimator
-from system.modules.DepthProEstimator import DepthProEstimator
+#from system.modules.DepthProEstimator import DepthProEstimator
 from system.modules.VisualizationModule import VisualizationModule
 from system.modules.DepthNormalizer import DepthNormalizer
 from system.modules.TrackingModule import TrackingModule
@@ -24,8 +24,8 @@ def main():
     logging.info("Starting main()")
     controller = None
 
-    import pythoncom
-    pythoncom.CoInitializeEx(pythoncom.COINIT_APARTMENTTHREADED)
+    #import pythoncom
+    #pythoncom.CoInitializeEx(pythoncom.COINIT_APARTMENTTHREADED)
 
     try:
         config = Config()
@@ -71,25 +71,25 @@ def main():
         controller.add_module(RealSenseCamera(config, CAM_NAME))
 
         # Estimators
-        controller.add_module(MiDaSDepthEstimator(config, MIDAS_NAME))
+        #controller.add_module(MiDaSDepthEstimator(config, MIDAS_NAME))
         #controller.add_module(DepthProEstimator(config, DEPTHPRO_NAME))
 
         # Normalizers
         controller.add_module(DepthNormalizer(config, NORM_DEPTH,  SystemData.DEPTH, SystemData.NORM_DEPTH))
-        controller.add_module(DepthNormalizer(config, NORM_MIDAS, SystemData.MIDAS_ESTIMATED_DEPTH, SystemData.NORM_MIDAS, invert=True))
+        #controller.add_module(DepthNormalizer(config, NORM_MIDAS, SystemData.MIDAS_ESTIMATED_DEPTH, SystemData.NORM_MIDAS, invert=True))
         #controller.add_module(DepthNormalizer(config, NORM_PRO, SystemData.PRO_ESTIMATED_DEPTH, SystemData.NORM_PRO))
 
         # YOLO
-        controller.add_module(YOLODetector(config, YOLO_DEPTH_NAME, {SystemData.DEPTH: SystemData.DEPTH_DETECTIONS}))
-        controller.add_module(YOLODetector(config, YOLO_NORM_NAME, {SystemData.NORM_MIDAS: SystemData.MIDAS_DETECTIONS}))
+        #controller.add_module(YOLODetector(config, YOLO_DEPTH_NAME, {SystemData.DEPTH: SystemData.DEPTH_DETECTIONS}))
+        #controller.add_module(YOLODetector(config, YOLO_NORM_NAME, {SystemData.NORM_MIDAS: SystemData.MIDAS_DETECTIONS}))
         #controller.add_module(YOLODetector(config, YOLO_DEPTHPRO_NAME, SystemData.PRO_ESTIMATED_DEPTH, SystemData.PRO_DETECTIONS))
         #controller.add_module(YOLODetector(config, YOLO_NORM_NAME, {SystemData.NORM_MIDAS: SystemData.VIS_MIDAS_COLORMAP_DETECTIONS,
         #                                                            SystemData.NORM_PRO: SystemData.VIS_PRO_COLORMAP_DETECTIONS}))
         
         # Tracker
-        controller.add_module(TrackingModule(config, TRACKER_NAME, {SystemData.DEPTH_DETECTIONS: SystemData.TRACKED_DEPTH_DETECTIONS,
-                                                                    SystemData.MIDAS_DETECTIONS: SystemData.TRACKED_MIDAS_DETECTIONS,
-                                                                    SystemData.PRO_DETECTIONS: SystemData.TRACKED_PRO_DETECTIONS}))
+        #controller.add_module(TrackingModule(config, TRACKER_NAME, {SystemData.DEPTH_DETECTIONS: SystemData.TRACKED_DEPTH_DETECTIONS,
+        #                                                            SystemData.MIDAS_DETECTIONS: SystemData.TRACKED_MIDAS_DETECTIONS,
+        #                                                            SystemData.PRO_DETECTIONS: SystemData.TRACKED_PRO_DETECTIONS}))
 
         # Saver
         controller.add_module(FrameSaver(config, SAVE_NAME))
@@ -107,13 +107,13 @@ def main():
         #             Enable views                 #
         #------------------------------------------#
         controller.set_view(SystemData.VIS_DEPTH_COLORMAP, True)
-        controller.set_view(SystemData.VIS_DEPTH_COLORMAP_DETECTIONS, True)
-        controller.set_view(SystemData.VIS_DEPTH_COLORMAP_TRACKED_DETECTIONS, True)
+        #controller.set_view(SystemData.VIS_DEPTH_COLORMAP_DETECTIONS, True)
+        #controller.set_view(SystemData.VIS_DEPTH_COLORMAP_TRACKED_DETECTIONS, True)
 
 
-        controller.set_view(SystemData.VIS_MIDAS_COLORMAP, True)
-        controller.set_view(SystemData.VIS_MIDAS_COLORMAP_DETECTIONS, True)
-        controller.set_view(SystemData.VIS_MIDAS_COLORMAP_TRACKED_DETECTIONS, True)
+        #controller.set_view(SystemData.VIS_MIDAS_COLORMAP, True)
+        #controller.set_view(SystemData.VIS_MIDAS_COLORMAP_DETECTIONS, True)
+        #controller.set_view(SystemData.VIS_MIDAS_COLORMAP_TRACKED_DETECTIONS, True)
 
 
         #controller.set_view(SystemData.VIS_PRO_COLORMAP, True)

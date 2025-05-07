@@ -11,12 +11,17 @@ class Config:
     # Realsense camera
     depth_res = 640
     color_res = 640
+    depth_res = 640
+    color_res = 640
 
     if depth_res == 424:
         depth_stream_width: int = 424
         depth_stream_height: int = 240
     if depth_res == 640:
         depth_stream_width: int = 640   
+        depth_stream_height: int = 480
+    elif depth_res == 640:
+        depth_stream_width: int = 640
         depth_stream_height: int = 480
     depth_stream_fps: int = 6
 
