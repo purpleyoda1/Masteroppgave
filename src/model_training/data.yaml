@@ -1,5 +1,5 @@
 # YOLO dataset configuration
-path: C:\Users\sondr\Documents\NTNU\Master\training_data\training\480_realsense\
+path: C:\Users\sondr\Documents\NTNU\Master\training_data\training\640_norm_color\
 train: images\train 
 val: images\val 
 test: images\test  

@@ -68,11 +68,7 @@ class YOLODetector(SystemModule):
         """
         Set model path
         """
-        if self.name == "YOLO_MiDaS":
-            self.model_path = self._config.yolo_midas_model_path
-        elif self.name == "YOLO_DepthPro":
-            self.model_path = self._config.yolo_pro_model_path
-        elif self.name == "YOLO_Normalized":
+        if self.name == "YOLO_Normalized":
             self.model_path = self._config.yolo_normalized_model_path
         else:
             self.model_path = self._config.yolo_model_path
@@ -106,7 +102,7 @@ class YOLODetector(SystemModule):
             
             try:
                 detections_list = self._detect(input_image)
-                #self.logger.debug(f"Detected {len(detections_list)} objects in {input_key}")
+                self.logger.debug(f"Detected {len(detections_list)} objects in {input_key}")
                 output_data[output_key] = detections_list
             except Exception as e:
                 self.logger.error(f"Error applying {self.name} to input image: {e}")

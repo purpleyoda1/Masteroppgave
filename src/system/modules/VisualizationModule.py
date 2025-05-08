@@ -472,6 +472,9 @@ class VisualizationModule(SystemModule):
         views_for_montage = []
 
         for key in view_order:
+            if key not in output_data.keys():
+                self.logger.debug(f"Missing view for montage, skipping: {key}")
+                continue
             view = output_data[key]
             if view is not None:
                 resized_view = self._resize_for_montage(view, self._view_target_height)

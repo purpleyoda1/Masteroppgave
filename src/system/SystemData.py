@@ -2,6 +2,14 @@
 
 class SystemData:
     """Types of data available in system"""
+    # Module names
+    CAMERA_NAME = "RealSense_Camera"
+    MIDAS_NAME = "MiDaS_Estimator"
+    PRO_NAME = "DepthPro_Estimator"
+    NORM_DEPTH = "Normalizer_Depth"
+    NORM_MIDAS = "Normalizer_MiDaS"
+    NORM_PRO = "Normalizer_DepthPro"
+
     # Camera
     COLOR = "color"
     DEPTH = "depth"

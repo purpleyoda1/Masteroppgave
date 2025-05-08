@@ -8,7 +8,9 @@ from system.SystemData import SystemData
 
 @dataclass
 class Config:
-    # Realsense camera
+    #------------------------------------------#
+    #            Camera settings               #
+    #------------------------------------------#
     depth_res = 640
     color_res = 640
     depth_res = 640
@@ -41,6 +43,15 @@ class Config:
     imu_gyro_fps = 200
     imu_print_interval = 1.0
 
+    #------------------------------------------#
+    #      System Controller settings          #
+    #------------------------------------------#
+    module_active_states: Dict[str, bool] = field(default_factory=lambda: {
+        
+    })
+
+
+
     # YOLO model
     confidence_threshold: float = 0.6
     iou_treshold: float = 0.5
@@ -56,21 +67,9 @@ class Config:
         return os.path.join(base_path, relative_path)
     
     @property
-    def yolo_midas_model_path(self) -> str:
-        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        relative_path = "src\\model_training\\runs\\detect\\MiDaS\\weights\\best.pt"
-        return os.path.join(base_path, relative_path)
-    
-    @property
-    def yolo_pro_model_path(self) -> str:
-        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        relative_path = "src\\model_training\\runs\\detect\\v11small\\best.pt"
-        return os.path.join(base_path, relative_path)
-    
-    @property
     def yolo_normalized_model_path(self) -> str:
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        relative_path = "src\\model_training\\runs\\detect\\480_norm_L\\weights\\best.pt"
+        relative_path = "src\\model_training\\runs\\detect\\640_norm_real_L\\weights\\best.pt"
         return os.path.join(base_path, relative_path)
     
     # MiDaS model
