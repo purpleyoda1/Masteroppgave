@@ -9,6 +9,11 @@ class SystemData:
     NORM_DEPTH = "Normalizer_Depth"
     NORM_MIDAS = "Normalizer_MiDaS"
     NORM_PRO = "Normalizer_DepthPro"
+    YOLO_DEPTH_NAME = "YOLO_Depth"
+    YOLO_NORM_NAME = "YOLO_Normalized"
+    TRACKER_NAME = "TrackingModule"
+    VIS_NAME = "Visualization_Module"
+    SAVE_NAME = "FrameSaver"
 
     # Camera
     COLOR = "color"
