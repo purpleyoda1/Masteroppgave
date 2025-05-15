@@ -6,13 +6,11 @@ class SystemData:
     CAMERA_NAME = "RealSense_Camera"
     MIDAS_NAME = "MiDaS_Estimator"
     PRO_NAME = "DepthPro_Estimator"
-    NORM_DEPTH = "Normalizer_Depth"
-    NORM_MIDAS = "Normalizer_MiDaS"
-    NORM_PRO = "Normalizer_DepthPro"
+    NORM_NAME = "NormalizerModule"
     YOLO_DEPTH_NAME = "YOLO_Depth"
     YOLO_NORM_NAME = "YOLO_Normalized"
     TRACKER_NAME = "TrackingModule"
-    VIS_NAME = "Visualization_Module"
+    VIS_NAME = "VisualizationModule"
     SAVE_NAME = "FrameSaver"
 
     # Camera
@@ -44,16 +42,16 @@ class SystemData:
     TRACKED_PRO_DETECTIONS = "tracked_pro_detections"
 
     # Visualizer
-    VIS_DEPTH_COLORMAP = "vis_depth_colormap"
-    VIS_MIDAS_COLORMAP = "vis_midas_colormap"
-    VIS_PRO_COLORMAP = "vis_pro_colormap"
-    VIS_DEPTH_COLORMAP_DETECTIONS = "vis_depth_colormap_detections"
-    VIS_MIDAS_COLORMAP_DETECTIONS = "vis_midas_colormap_detections"
-    VIS_PRO_COLORMAP_DETECTIONS = "vis_pro_colormap_detections"
-    VIS_DEPTH_COLORMAP_TRACKED_DETECTIONS = "vis_depth_colormap_tracked_detections"
-    VIS_MIDAS_COLORMAP_TRACKED_DETECTIONS = "vis_midas_colormap_tracked_detections"
-    VIS_PRO_COLORMAP_TRACKED_DETECTIONS = "vis_pro_colormap_tracked_detections"
+    VIS_DEPTH_DETECTIONS = "vis_depth_detections"
+    VIS_MIDAS_DETECTIONS = "vis_midas_detections"
+    VIS_PRO_DETECTIONS = "vis_pro_detections"
+    VIS_DEPTH_TRACKED_DETECTIONS = "vis_depth_tracked_detections"
+    VIS_MIDAS_TRACKED_DETECTIONS = "vis_midas_tracked_detections"
+    VIS_PRO_TRACKED_DETECTIONS = "vis_pro_tracked_detections"
     VIS_MONTAGE = "vis_montage"
+    VIS_ACTIVE_STREAMS = "vis_active_streams"
 
-    # Frame
+    # System
     SYS_FRAME_ID = "sys_frame_id"
+    SYS_STATUS_INFO = "sys_status_info"
+

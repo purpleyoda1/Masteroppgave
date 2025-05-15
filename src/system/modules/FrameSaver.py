@@ -7,7 +7,7 @@ import os
 import cv2
 import numpy as np
 import logging
-from typing import Any, Set, Dict
+from typing import Any, Set, Dict, Optional, List
 import re
 
 class FrameSaver(SystemModule):
@@ -20,7 +20,6 @@ class FrameSaver(SystemModule):
         self.logger = logging.getLogger(module_name)
 
         self._save_base_dir = getattr(self._config, "save_base_dir")
-        self._streams_to_save = getattr(self._config, "streams_to_save")
         
         self._save_flag = False
         self._current_run_dir = None
@@ -74,7 +73,10 @@ class FrameSaver(SystemModule):
         return set()
     
     def get_dependency_inputs(self) -> Set[str]:
-        return set(self._streams_to_save).union(SystemData.SYS_FRAME_ID)
+        return {
+            SystemData.VIS_MONTAGE,
+            SystemData.VIS_ACTIVE_STREAMS
+        }
     
     def get_outputs(self) -> Set[str]:
         return set()
@@ -96,9 +98,14 @@ class FrameSaver(SystemModule):
         self._save_flag = False
         self._total_saved += 1
 
+        # get frames to save
+        streams_to_save = data.get(SystemData.VIS_ACTIVE_STREAMS, set())
+        if SystemData.VIS_MONTAGE in data.keys():
+            streams_to_save.append(SystemData.VIS_MONTAGE)
+
         # Iteratively save frames
-        for key in self._streams_to_save:
-            if key not in data:
+        for key in streams_to_save:
+            if key not in data.keys():
                 self.logger.warning(f"Requested save data not in current data dictionary")
                 continue
 
