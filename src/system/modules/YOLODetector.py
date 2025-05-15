@@ -21,6 +21,7 @@ class YOLODetector(SystemModule):
     def __init__(self, 
                  config: Any, 
                  module_name: str, 
+                 module_path: str,
                  stream_map: Dict[str, str]):
         """
         Initializes chosen YOLO depth detector
@@ -32,7 +33,7 @@ class YOLODetector(SystemModule):
             raise ImportError("Ultralytics library not found")
         
         self._stream_map = stream_map # Input -> Output
-        self.model_path: Optional[str] = None
+        self.model_path = module_path
         self.confidence_threshold = self._config.confidence_threshold
         self.iou_treshold = self._config.iou_treshold
         self.class_names = self._config.class_names
@@ -47,8 +48,6 @@ class YOLODetector(SystemModule):
         
         self.logger.info(f"Initializing {self.name}")
         try:
-            self._set_path_from_config()
-            
             if not os.path.exists(self.model_path):
                 logging.error(f"YOLO model not found at {self.model_path}")
                 return False
@@ -62,16 +61,6 @@ class YOLODetector(SystemModule):
         except Exception as e:
             logging.error(f"Error loading YOLO model: {e}")
             return False
-
-
-    def _set_path_from_config(self) -> None:
-        """
-        Set model path
-        """
-        if self.name == "YOLO_Normalized":
-            self.model_path = self._config.yolo_normalized_model_path
-        else:
-            self.model_path = self._config.yolo_model_path
 
     def get_required_inputs(self) -> Set[str]:
         return set()

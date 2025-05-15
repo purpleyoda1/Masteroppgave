@@ -27,13 +27,13 @@ class TrackingModule(SystemModule):
         self._class_names = getattr(self._config, "class_names", {})
 
         self.trackers: Dict[str, Optional[BYTETracker]] = {input_key: None for input_key in stream_map.keys()}
-        self._active_trackers: Set[str] = set(self._stream_map.keys())
+        self._active_trackers: Set[str] = set()
         self._internal_lock = threading.Lock()
 
         self.track_tresh = getattr(config, "byte_track_tresh", 0.45)
         self.track_buffer = getattr(config, "byte_track_buffer", 25)
         self.match_tresh = getattr(config, "byte_match_tresh", 0.8)
-        self.frame_rate = getattr(config, "byte_frame_rate", 15)
+        self.frame_rate = getattr(config, "byte_frame_rate", 6)
 
         self.is_initialized = False
 
@@ -45,6 +45,9 @@ class TrackingModule(SystemModule):
         
         self.logger.info(f"Initializing {self.name} for {list(self._stream_map.keys())}")
         success = True
+
+        with self._internal_lock:
+            self._active_trackers = set(self._stream_map.keys())
 
         for input_key in self.trackers.keys():
             self.logger.debug(f"Initializing tracker for {input_key}")
@@ -130,15 +133,18 @@ class TrackingModule(SystemModule):
 
         for input_key, output_key in self._stream_map.items():
             tracked_detections: List[Detection] = []
-            if input_key not in self._active_trackers:
-                output_data[output_key] = []
-                continue
+
+            with self._internal_lock:
+                if input_key not in self._active_trackers:
+                    output_data[output_key] = []
+                    continue
             
             # Check for valid tracker and detections
             detections: Optional[List[Detection]] = data.get(input_key)
             if detections is None:
                 #self.logger.debug(f"{input_key} not found, processing as empty")
-                detections = []
+                output_data[output_key] = []
+                continue
 
             tracker = self.trackers.get(input_key)
             if tracker is None:
@@ -178,8 +184,8 @@ class TrackingModule(SystemModule):
                         try:
                             x1, y1, x2, y2 = map(int, target[0:4])
                             track_id = int(target[4])
-                            class_id = int(target[5])
-                            score = int(target[6])
+                            class_id = int(target[6])
+                            score = int(target[5])
                             label = self._class_names.get(class_id, f"Track_{track_id}")
 
                             tracked_det = Detection(
@@ -188,7 +194,8 @@ class TrackingModule(SystemModule):
                                 conf=score,
                                 source=output_key,
                                 dimension="2D",
-                                bbox2D=[x1, y1, x2, y2] 
+                                bbox2D=[x1, y1, x2, y2],
+                                track_id=track_id 
                             )
                             tracked_detections.append(tracked_det)
                         except Exception as e:

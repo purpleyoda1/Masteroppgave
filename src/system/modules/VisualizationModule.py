@@ -43,38 +43,31 @@ class VisualizationModule(SystemModule):
         self._ALL_POSSBLE_VIEWS = {
             SystemData.COLOR,
             SystemData.DEPTH,
-            SystemData.VIS_DEPTH_COLORMAP,
-            SystemData.VIS_MIDAS_COLORMAP,
-            SystemData.VIS_PRO_COLORMAP,
-            SystemData.VIS_DEPTH_COLORMAP_DETECTIONS,
-            SystemData.VIS_MIDAS_COLORMAP_DETECTIONS,
-            SystemData.VIS_PRO_COLORMAP_DETECTIONS,
-            SystemData.VIS_DEPTH_COLORMAP_TRACKED_DETECTIONS,
-            SystemData.VIS_MIDAS_COLORMAP_TRACKED_DETECTIONS,
-            SystemData.VIS_PRO_COLORMAP_TRACKED_DETECTIONS
+            SystemData.VIS_DEPTH_DETECTIONS,
+            SystemData.VIS_MIDAS_DETECTIONS,
+            SystemData.VIS_PRO_DETECTIONS,
+            SystemData.VIS_DEPTH_TRACKED_DETECTIONS,
+            SystemData.VIS_MIDAS_TRACKED_DETECTIONS,
+            SystemData.VIS_PRO_TRACKED_DETECTIONS
         }
 
         # Views that simply should be passed on
         self._pass_on_views: Set[str] = {SystemData.COLOR,
                                         SystemData.DEPTH}
         # Views that need colormap
-        self._colormap_inputs: Dict[str, str] = {
-            SystemData.VIS_DEPTH_COLORMAP: SystemData.NORM_DEPTH,
-            SystemData.VIS_MIDAS_COLORMAP: SystemData.NORM_MIDAS,
-            SystemData.VIS_PRO_COLORMAP: SystemData.NORM_PRO
-        }
+        self._colormap_inputs: List[str] = [
+            SystemData.NORM_DEPTH,
+            SystemData.NORM_MIDAS,
+            SystemData.NORM_PRO
+        ]
         # Views that need detection overlay
         self._detection_views: Dict[str, Tuple[str, str]] = {
-            SystemData.VIS_DEPTH_COLORMAP_DETECTIONS: (SystemData.NORM_DEPTH, SystemData.DEPTH_DETECTIONS),
-            SystemData.VIS_MIDAS_COLORMAP_DETECTIONS: (SystemData.NORM_MIDAS, SystemData.MIDAS_DETECTIONS),
-            SystemData.VIS_PRO_COLORMAP_DETECTIONS: (SystemData.NORM_PRO, SystemData.PRO_DETECTIONS)
-        }
-
-        # Tracked detection overlays
-        self._tracked_detection_views: Dict[str, Tuple[str, str]] = {
-            SystemData.VIS_DEPTH_COLORMAP_TRACKED_DETECTIONS: (SystemData.NORM_DEPTH, SystemData.TRACKED_DEPTH_DETECTIONS),
-            SystemData.VIS_MIDAS_COLORMAP_TRACKED_DETECTIONS: (SystemData.NORM_MIDAS, SystemData.TRACKED_MIDAS_DETECTIONS),
-            SystemData.VIS_PRO_COLORMAP_TRACKED_DETECTIONS: (SystemData.NORM_PRO, SystemData.TRACKED_PRO_DETECTIONS)
+            SystemData.VIS_DEPTH_DETECTIONS: (SystemData.NORM_DEPTH, SystemData.DEPTH_DETECTIONS),
+            SystemData.VIS_MIDAS_DETECTIONS: (SystemData.NORM_MIDAS, SystemData.MIDAS_DETECTIONS),
+            SystemData.VIS_PRO_DETECTIONS: (SystemData.NORM_PRO, SystemData.PRO_DETECTIONS),
+            SystemData.VIS_DEPTH_TRACKED_DETECTIONS: (SystemData.NORM_DEPTH, SystemData.TRACKED_DEPTH_DETECTIONS),
+            SystemData.VIS_MIDAS_TRACKED_DETECTIONS: (SystemData.NORM_MIDAS, SystemData.TRACKED_MIDAS_DETECTIONS),
+            SystemData.VIS_PRO_TRACKED_DETECTIONS: (SystemData.NORM_PRO, SystemData.TRACKED_PRO_DETECTIONS)
         }
 
     def set_view(self, view_key: str, active: bool) -> None:
@@ -129,15 +122,16 @@ class VisualizationModule(SystemModule):
     
     def get_dependency_inputs(self) -> Set[str]:
         dependency_inputs = set(self._pass_on_views) \
-                                .union(set(self._colormap_inputs.values())) \
+                                .union(set(self._colormap_inputs)) \
                                 .union({base for base, det in self._detection_views.values()}) \
-                                .union({det for base, det in self._detection_views.values()})  \
-                                .union({base for base, det in self._tracked_detection_views.values()}) \
-                                .union({det for base, det in self._tracked_detection_views.values()})           
+                                .union({det for base, det in self._detection_views.values()})          
         return dependency_inputs
     
     def get_outputs(self) -> Set[str]:
-        return set(SystemData.VIS_MONTAGE)
+        return {
+            SystemData.VIS_MONTAGE,
+            SystemData.VIS_ACTIVE_STREAMS
+        }
     
     def _apply_colormap(self, depth_map: np.ndarray) -> Optional[np.ndarray]:
         """Normalizes depth map then applies colormap"""
@@ -424,18 +418,18 @@ class VisualizationModule(SystemModule):
                 output_data[key] = data.get(key)
 
             # Colormaps
-            elif key in self._colormap_inputs:
-                input_key = self._colormap_inputs.get(key)
-                if input_key in data:
-                    output_data[key] = self._apply_colormap(data.get(input_key))
-                else:
-                    self.logger.debug(f"Missing input: {input_key}")
+            elif self._apply_colorma_flag:
+                if key in self._colormap_inputs:
+                    if key in data:
+                        output_data[key] = self._apply_colormap(data.get(key))
+                    else:
+                        self.logger.debug(f"Missing input: {key}")
             
             # Detection overlays
             elif key in self._detection_views:
                 depth_map_key, detection_key = self._detection_views.get(key)
                 if depth_map_key:
-                    depth_map = self._apply_colormap(data.get(depth_map_key))
+                    depth_map = data.get(depth_map_key)
                     if depth_map is not None:
                         if detection_key:
                             detections = data.get(detection_key)
@@ -448,25 +442,7 @@ class VisualizationModule(SystemModule):
                             self.logger.debug(f"Missing input: {detection_key}")
                 else:
                     self.logger.debug(f"Missing input: {depth_map_key}")
-
-            # Tracked detection overlays
-            elif key in self._tracked_detection_views:
-                depth_map_key, detection_key = self._tracked_detection_views.get(key)
-                if depth_map_key:
-                    depth_map = self._apply_colormap(data.get(depth_map_key))
-                    if depth_map is not None:
-                        if detection_key:
-                            detections = data.get(detection_key)
-
-                            if detections:
-                                output_data[key] = self._draw_detections(depth_map, detections)
-                            else:
-                                output_data[key] = depth_map
-                        else:
-                            self.logger.debug(f"Missing input: {detection_key}")
-                else:
-                    self.logger.debug(f"Missing input: {depth_map_key}")
-
+                    
         # Then montage logic
         view_order = self.get_active_views()
         views_for_montage = []
@@ -484,6 +460,7 @@ class VisualizationModule(SystemModule):
 
         vis_montage = self._create_montage(views_for_montage, self._canvas_width, self._canvas_height)
         output_data[SystemData.VIS_MONTAGE] = vis_montage
+        output_data[SystemData.VIS_ACTIVE_STREAMS] = view_order
 
         return output_data
     

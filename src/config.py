@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 import os
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List, Any
 import numpy as np
 from system.SystemData import SystemData
 
@@ -44,13 +44,55 @@ class Config:
     imu_print_interval = 1.0
 
     #------------------------------------------#
-    #      System Controller settings          #
+    #        System Controller settings        #
     #------------------------------------------#
     module_active_states: Dict[str, bool] = field(default_factory=lambda: {
-        
+        # Camera
+        SystemData.CAMERA_NAME: True,
+        # Estimator
+        SystemData.MIDAS_NAME: True,
+        SystemData.PRO_NAME: False,
+        # Normalizers
+        SystemData.NORM_NAME: True,
+        # YOLO Detectors
+        SystemData.YOLO_DEPTH_NAME: False,
+        SystemData.YOLO_NORM_NAME: True,
+        # Detection tracker
+        SystemData.TRACKER_NAME: True,
+        # Visualization
+        SystemData.VIS_NAME: True,
+        # Frame Saver
+        SystemData.SAVE_NAME: True,
     })
 
+    # List of configurations fpor system modules, which will be initialized
+    yolo_configurations: List[Dict[str, Any]] = field(default_factory=lambda: [
+        {
+            'name': SystemData.YOLO_NORM_NAME,
+            'model_path': os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_real_L\\weights\\best.pt"),
+            'stream_map': {
+                SystemData.NORM_MIDAS: SystemData.MIDAS_DETECTIONS,
+                SystemData.NORM_PRO: SystemData.PRO_DETECTIONS
+            }
+        }
+    ])
 
+    normalizer_stream_map: Dict[str, Dict[str, bool]] = field(default_factory=lambda: {
+        SystemData.DEPTH: {SystemData.NORM_DEPTH: False},
+        SystemData.MIDAS_ESTIMATED_DEPTH: {SystemData.NORM_MIDAS: True},
+        SystemData.PRO_ESTIMATED_DEPTH: {SystemData.NORM_PRO: False},
+    })
+
+    tracker_stream_map: Dict[str, str] = field(default_factory=lambda: {
+        SystemData.DEPTH_DETECTIONS: SystemData.TRACKED_DEPTH_DETECTIONS,
+        SystemData.MIDAS_DETECTIONS: SystemData.TRACKED_MIDAS_DETECTIONS,
+        SystemData.PRO_DETECTIONS: SystemData.TRACKED_PRO_DETECTIONS,
+    })
+
+    visualizer_initial_montage: List[str] = field(default_factory=lambda: [
+        SystemData.COLOR,
+        SystemData.DEPTH
+    ])
 
     # YOLO model
     confidence_threshold: float = 0.6
@@ -94,9 +136,9 @@ class Config:
     norm_dtype: np.dtype = np.uint8
 
     # Visualizer
-    vis_view_target_height: int = 240
-    vis_canvas_height: int = 1080
-    vis_canvas_width: int = 1920
+    vis_view_target_height: int = 480
+    vis_canvas_height: int = 480
+    vis_canvas_width: int = 640
     vis_apply_colormap: bool = False
     vis_class_colors: Dict[int, Tuple[int, int, int]] = field(default_factory=lambda: {
         'Capacitor': (255, 0, 0),
@@ -104,6 +146,7 @@ class Config:
         'Screw': (0, 0, 255)
     })
     vis_default_detection_color: Tuple[int, int, int] = (255, 0, 200)
+    vis_initial_active_views = {SystemData.COLOR}
 
     # Frame saver
     @property
