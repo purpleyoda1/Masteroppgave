@@ -38,12 +38,12 @@ class FrameSaver(SystemModule):
         try:
             for item in os.listdir(self._save_base_dir):
                 item_path = os.path.join(self._save_base_dir, item)
-                match = pattern.match(item)
+                match = pattern.match(item_path)
                 if match:
                     run_num = int(match.group(1))
                     if run_num > max_run_num:
                         max_run_num = run_num
-            return max_run_num
+            return (max_run_num + 1)
         except OSError as e:
             self.logger.error(f"Error scanning save directory: {e}")
             return 1
