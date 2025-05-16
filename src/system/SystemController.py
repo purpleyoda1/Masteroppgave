@@ -71,7 +71,7 @@ class SystemController:
 
         # Reset processing order
         self.processing_order = None
-        self._determine_processing_order()
+        self.processing_order = self._determine_processing_order()
     
     def disable_module(self, module_name: str) -> None:
         """To keep the functionality clear and seperate"""
@@ -211,6 +211,8 @@ class SystemController:
             if self._primary_source_name in order:
                 order.remove(self._primary_source_name)
             order.insert(0, self._primary_source_name)
+
+        self.logger.info(f"")
 
         return order
 
@@ -368,8 +370,6 @@ class SystemController:
 
                             if new_data:
                                 cycle_data.update(new_data)
-                                #self.logger.debug(f"Content of cycle_data: {cycle_data.keys()}")
-                            self.logger.debug(f"Currently available data: {cycle_data.keys()}")
                         except Exception as e:
                             self.logger.error(f"Error processing {name}: {e}")
                         
@@ -384,6 +384,9 @@ class SystemController:
                     time.sleep(0.5)
                 
                 self.sys_frame_counter += 1
+                active_modules = [module for module, state in self.module_states.items() if state]
+                self.logger.debug(f"Active modules: {active_modules}")
+                self.logger.debug(f"Current available data: {cycle_data.keys()}")
                 cycle_end_time = time.perf_counter()
                 # TODO: complete cycle timing logic
         except Exception as e:

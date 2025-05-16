@@ -137,8 +137,8 @@ class Config:
 
     # Visualizer
     vis_view_target_height: int = 480
-    vis_canvas_height: int = 480
-    vis_canvas_width: int = 640
+    vis_canvas_height: int = 960
+    vis_canvas_width: int = 1280
     vis_apply_colormap: bool = False
     vis_class_colors: Dict[int, Tuple[int, int, int]] = field(default_factory=lambda: {
         'Capacitor': (255, 0, 0),

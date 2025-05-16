@@ -143,7 +143,7 @@ class YOLODetector(SystemModule):
                     )
                     detections.append(detection)
         except Exception as e:
-            self.logger.error(f"Error proccessing detection data")
+            self.logger.error(f"Error proccessing detection data: {e}")
 
         return detections
     

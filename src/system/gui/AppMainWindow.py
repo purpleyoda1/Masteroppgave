@@ -150,18 +150,26 @@ class AppMainWindow(QMainWindow):
         
         try:
             # Attempt conversion from cv2 array to pyqt
+            h, w = 0, 0
+            ch = 0
             qt_image_format = None
             if image.ndim == 3 and image.shape[2] == 3:
                 h, w, ch = image.shape
                 bytes_per_line = ch * w
-                qt_image = QImage(image.data, w, h, bytes_per_line, QImage.Format.Format_BGR888)
+                contiguous_image = np.ascontiguousarray(image)
+                qt_image = QImage(contiguous_image.data, w, h, bytes_per_line, QImage.Format.Format_BGR888)
             else:
                 display_widget.setText(f"Unsopported image format: {h}, {w}, {ch}")
                 return
 
             pixmap = QPixmap.fromImage(qt_image)
-            display_widget.setScaledContents(True)
-            display_widget.setPixmap(pixmap)
+
+            # Scale appropriately
+            pixmap_scaled = pixmap.scaled(
+                display_widget.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+            )
+            #display_widget.setScaledContents(True)
+            display_widget.setPixmap(pixmap_scaled)
 
             #display_widget.setPixmap(pixmap.scaled(
             #    display_widget.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation

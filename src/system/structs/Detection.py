@@ -17,7 +17,7 @@ class Detection:
     conf: float
     source: str      # Which detector created it
     dimension: str   # 2D or 3D
-    track_id: Optional[str]
+    track_id: Optional[str] = None
     timestamp: float = field(default_factory=time.time)
 
     # Dimension dependent data

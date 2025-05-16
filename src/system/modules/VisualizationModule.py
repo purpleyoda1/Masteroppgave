@@ -22,7 +22,7 @@ class VisualizationModule(SystemModule):
         """Initialize Visualization module"""
         super().__init__(config, module_name)
         self.logger = logging.getLogger(self.name)
-        self._view_target_height = getattr(self._config, "vis_view_target_height", 240)
+        self._view_target_height = getattr(self._config, "vis_view_target_height", 484)
         self._canvas_height = getattr(self._config, "vis_canvas_height", 1080)
         self._canvas_width = getattr(self._config, "vis_canvas_widt", 1920)
         
@@ -53,7 +53,9 @@ class VisualizationModule(SystemModule):
 
         # Views that simply should be passed on
         self._pass_on_views: Set[str] = {SystemData.COLOR,
-                                        SystemData.DEPTH}
+                                        SystemData.DEPTH,
+                                        SystemData.MIDAS_ESTIMATED_DEPTH,
+                                        SystemData.PRO_ESTIMATED_DEPTH}
         # Views that need colormap
         self._colormap_inputs: List[str] = [
             SystemData.NORM_DEPTH,
@@ -72,9 +74,7 @@ class VisualizationModule(SystemModule):
 
     def set_view(self, view_key: str, active: bool) -> None:
         """Sets status of a single view"""
-        if view_key not in self._ALL_POSSBLE_VIEWS:
-            self.logger.warning(f"Attemptet to set invalid key: {view_key}")
-            return
+        
         
         with self._vis_lock:
             if active:
@@ -82,7 +82,8 @@ class VisualizationModule(SystemModule):
             else:
                 self._active_views.discard(view_key)
         status = "activated" if active else "deactivated"
-        self.logger.debug(f"{view_key} {status}")
+        self.logger.info(f"{view_key}: {status}")
+        self.logger.info(f"Current active views: {self._active_views}")
 
     def toggle_view(self, view_key: str) -> None:
         """Toggle status of single view"""
@@ -418,12 +419,15 @@ class VisualizationModule(SystemModule):
                 output_data[key] = data.get(key)
 
             # Colormaps
-            elif self._apply_colorma_flag:
-                if key in self._colormap_inputs:
-                    if key in data:
+            elif key in self._colormap_inputs:
+                frame = data.get(key)
+                if frame is not None:
+                    if self._apply_colorma_flag:
                         output_data[key] = self._apply_colormap(data.get(key))
                     else:
-                        self.logger.debug(f"Missing input: {key}")
+                        output_data[key] = frame
+                else:
+                    self.logger.debug(f"Missing frame: {key}")
             
             # Detection overlays
             elif key in self._detection_views:
@@ -457,6 +461,7 @@ class VisualizationModule(SystemModule):
                 if resized_view is not None:
                     labeled_view = self._add_label_to_view(resized_view, key)
                     views_for_montage.append(resized_view)
+                    self.logger.debug(f"Added {key} to montage")
 
         vis_montage = self._create_montage(views_for_montage, self._canvas_width, self._canvas_height)
         output_data[SystemData.VIS_MONTAGE] = vis_montage

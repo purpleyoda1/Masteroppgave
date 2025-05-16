@@ -69,7 +69,7 @@
         <item>
          <widget class="QLabel" name="montage_display">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -446,42 +446,6 @@
      </layout>
     </item>
    </layout>
-   <zorder>montage_display</zorder>
-   <zorder>MiDaS_Estimator</zorder>
-   <zorder>start_button</zorder>
-   <zorder>stop_button</zorder>
-   <zorder>label</zorder>
-   <zorder>DepthPro_Estimator</zorder>
-   <zorder>YOLO_Normalized</zorder>
-   <zorder>YOLO_Depth</zorder>
-   <zorder>NormalizerModule</zorder>
-   <zorder>TrackingModule</zorder>
-   <zorder>FrameSaver</zorder>
-   <zorder>VisualizationModule</zorder>
-   <zorder>label_2</zorder>
-   <zorder>color</zorder>
-   <zorder>depth</zorder>
-   <zorder>midas_estimated_depth</zorder>
-   <zorder>norm_midas</zorder>
-   <zorder>vis_midas_detections</zorder>
-   <zorder>vis_midas_tracked_detections</zorder>
-   <zorder>label_3</zorder>
-   <zorder>label_4</zorder>
-   <zorder>pro_estimated_depth</zorder>
-   <zorder>vis_pro_detections</zorder>
-   <zorder>vis_pro_tracked_detections</zorder>
-   <zorder>norm_pro</zorder>
-   <zorder>save_button</zorder>
-   <zorder>label_5</zorder>
-   <zorder>vis_depth_detections</zorder>
-   <zorder>vis_depth_tracked_detections</zorder>
-   <zorder>norm_depth</zorder>
-   <zorder>label_6</zorder>
-   <zorder>label_7</zorder>
-   <zorder>label_8</zorder>
-   <zorder>status_message_display</zorder>
-   <zorder>verticalSpacer</zorder>
-   <zorder>colormap</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

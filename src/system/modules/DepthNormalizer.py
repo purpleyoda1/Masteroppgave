@@ -58,7 +58,7 @@ class DepthNormalizer(SystemModule):
             input_depth = data.get(input_key)
             if input_depth is None:
                 self.logger.debug(f"Input {input_key} not found in current data")
-                return None
+                continue
             
             try:
                 input_float = input_depth.astype(np.float32)
