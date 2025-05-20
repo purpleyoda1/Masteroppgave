@@ -37,7 +37,7 @@ class FrameSaver(SystemModule):
         try:
             for item in os.listdir(self._save_base_dir):
                 item_path = os.path.join(self._save_base_dir, item)
-                match = pattern.match(item_path)
+                match = pattern.match(item)
                 if match:
                     run_num = int(match.group(1))
                     if run_num > max_run_num:
@@ -73,10 +73,13 @@ class FrameSaver(SystemModule):
         return set()
     
     def get_dependency_inputs(self) -> Set[str]:
-        return {
+        config_save_streams = self._config.streams_to_save
+        dependencies = {
             SystemData.VIS_MONTAGE,
             SystemData.VIS_ACTIVE_STREAMS
         }
+        dependencies.update(config_save_streams)
+        return dependencies
     
     def get_outputs(self) -> Set[str]:
         return set()
