@@ -5,8 +5,6 @@ from .SystemModule import SystemModule
 from system.modules.RealSenseCamera import RealSenseCamera
 from system.modules.YOLODetector import YOLODetector
 from system.modules.MiDaSDepthEstimator import MiDaSDepthEstimator
-from system.modules.DepthProEstimator import DepthProEstimator
-from system.modules.VGGTEstimator import VGGTEstimator
 from system.modules.VisualizationModule import VisualizationModule
 from system.modules.DepthNormalizer import DepthNormalizer
 from system.modules.TrackingModule import TrackingModule
@@ -21,10 +19,11 @@ import sys
 
 class SystemController:
     """Central controller managing information flow and interaction between modules"""
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, USING_LAPTOP: bool= False):
         """Initialize controller"""
         self.config = config
         self.logger = logging.getLogger("SystemController")
+        self.USING_LAPTOP = USING_LAPTOP
 
         # Components
         self.modules: Dict[str, SystemModule] = {}
@@ -94,8 +93,11 @@ class SystemController:
         
         # Estimators
         self.add_module(MiDaSDepthEstimator(self.config, SystemData.MIDAS_NAME))
-        self.add_module(DepthProEstimator(self.config, SystemData.PRO_NAME))
-        self.add_module(VGGTEstimator(self.config, SystemData.VGGT_NAME))
+        if not self.USING_LAPTOP:
+            from system.modules.DepthProEstimator import DepthProEstimator
+            from system.modules.VGGTEstimator import VGGTEstimator
+            self.add_module(DepthProEstimator(self.config, SystemData.PRO_NAME))
+            self.add_module(VGGTEstimator(self.config, SystemData.VGGT_NAME))
 
         # Normalizer
         self.add_module(DepthNormalizer(self.config,

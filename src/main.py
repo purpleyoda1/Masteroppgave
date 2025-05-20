@@ -2,7 +2,6 @@
 
 import sys
 import logging
-import pythoncom
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QThread
 
@@ -11,15 +10,20 @@ from system.gui.AppMainWindow import AppMainWindow
 from system.gui.ControllerWorker import ControllerWorker
 from config import Config
 
+USING_LAPTOP = True
+
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    pythoncom.CoInitializeEx(pythoncom.COINIT_APARTMENTTHREADED)
+    
+    if not USING_LAPTOP:
+        import pythoncom
+        pythoncom.CoInitializeEx(pythoncom.COINIT_APARTMENTTHREADED)
 
     # Set up needed instances
     app = QApplication(sys.argv)
 
     config = Config()
-    controller = SystemController(config)
+    controller = SystemController(config, USING_LAPTOP)
     controller.initialize()
 
     controller_thread = QThread()
