@@ -1,3 +1,7 @@
 [submodule "external/depth-pro"]
 	path = external/depth-pro
 	url = https://github.com/apple/ml-depth-pro.git
+
+[submodule "external/vggt_purpleyoda"]
+	path = external/vggt_purpleyoda
+	url = https://github.com/purpleyoda1/vggt_purpleyoda

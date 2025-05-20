@@ -55,21 +55,26 @@ class VisualizationModule(SystemModule):
         self._pass_on_views: Set[str] = {SystemData.COLOR,
                                         SystemData.DEPTH,
                                         SystemData.MIDAS_ESTIMATED_DEPTH,
-                                        SystemData.PRO_ESTIMATED_DEPTH}
+                                        SystemData.PRO_ESTIMATED_DEPTH,
+                                        SystemData.VGGT_ESTIMATED_DEPTH}
         # Views that need colormap
         self._colormap_inputs: List[str] = [
             SystemData.NORM_DEPTH,
             SystemData.NORM_MIDAS,
-            SystemData.NORM_PRO
+            SystemData.NORM_PRO,
+            SystemData.NORM_VGGT
         ]
         # Views that need detection overlay
         self._detection_views: Dict[str, Tuple[str, str]] = {
             SystemData.VIS_DEPTH_DETECTIONS: (SystemData.NORM_DEPTH, SystemData.DEPTH_DETECTIONS),
             SystemData.VIS_MIDAS_DETECTIONS: (SystemData.NORM_MIDAS, SystemData.MIDAS_DETECTIONS),
             SystemData.VIS_PRO_DETECTIONS: (SystemData.NORM_PRO, SystemData.PRO_DETECTIONS),
+            SystemData.VIS_VGGT_DETECTIONS: (SystemData.NORM_VGGT, SystemData.VGGT_DETECTIONS),
             SystemData.VIS_DEPTH_TRACKED_DETECTIONS: (SystemData.NORM_DEPTH, SystemData.TRACKED_DEPTH_DETECTIONS),
             SystemData.VIS_MIDAS_TRACKED_DETECTIONS: (SystemData.NORM_MIDAS, SystemData.TRACKED_MIDAS_DETECTIONS),
-            SystemData.VIS_PRO_TRACKED_DETECTIONS: (SystemData.NORM_PRO, SystemData.TRACKED_PRO_DETECTIONS)
+            SystemData.VIS_PRO_TRACKED_DETECTIONS: (SystemData.NORM_PRO, SystemData.TRACKED_PRO_DETECTIONS),
+            SystemData.VIS_VGGT_TRACKED_DETECTIONS: (SystemData.NORM_VGGT, SystemData.TRACKED_VGGT_DETECTIONS)
+
         }
 
     def set_view(self, view_key: str, active: bool) -> None:

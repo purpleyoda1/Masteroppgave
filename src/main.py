@@ -12,7 +12,7 @@ from system.gui.ControllerWorker import ControllerWorker
 from config import Config
 
 def main():
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     pythoncom.CoInitializeEx(pythoncom.COINIT_APARTMENTTHREADED)
 
     # Set up needed instances
