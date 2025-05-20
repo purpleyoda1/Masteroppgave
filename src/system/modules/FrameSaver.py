@@ -74,12 +74,12 @@ class FrameSaver(SystemModule):
         return set()
     
     def get_dependency_inputs(self) -> Set[str]:
+        config_save_streams = self._config.streams_to_save
         dependencies = {
             SystemData.VIS_MONTAGE,
             SystemData.VIS_ACTIVE_STREAMS
         }
-        config_streams_to_save = getattr(self._config, "streams_to_save")
-        dependencies.update(config_streams_to_save)
+        dependencies.update(config_save_streams)
         return dependencies
     
     def get_outputs(self) -> Set[str]:

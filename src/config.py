@@ -158,11 +158,16 @@ class Config:
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         relative_path = "training_data/real_world"
         return os.path.join(base_path, relative_path)
-    streams_to_save = [
+    streams_to_save = {
         SystemData.COLOR,
         SystemData.DEPTH,
+        SystemData.NORM_DEPTH,
         SystemData.MIDAS_ESTIMATED_DEPTH,
         SystemData.NORM_MIDAS,
+        SystemData.MIDAS_DETECTIONS,
+        SystemData.TRACKED_DEPTH_DETECTIONS,
         SystemData.PRO_ESTIMATED_DEPTH,
-        SystemData.NORM_PRO
-    ]
+        SystemData.NORM_PRO,
+        SystemData.PRO_DETECTIONS,
+        SystemData.TRACKED_PRO_DETECTIONS
+    }
