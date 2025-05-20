@@ -37,11 +37,12 @@ class FrameSaver(SystemModule):
         try:
             for item in os.listdir(self._save_base_dir):
                 item_path = os.path.join(self._save_base_dir, item)
-                match = pattern.match(item_path)
+                match = pattern.match(item)
                 if match:
                     run_num = int(match.group(1))
                     if run_num > max_run_num:
                         max_run_num = run_num
+            self.logger.info(f"Run number determined: {max_run_num+1}")
             return (max_run_num + 1)
         except OSError as e:
             self.logger.error(f"Error scanning save directory: {e}")
@@ -73,10 +74,13 @@ class FrameSaver(SystemModule):
         return set()
     
     def get_dependency_inputs(self) -> Set[str]:
-        return {
+        dependencies = {
             SystemData.VIS_MONTAGE,
             SystemData.VIS_ACTIVE_STREAMS
         }
+        config_streams_to_save = getattr(self._config, "streams_to_save")
+        dependencies.update(config_streams_to_save)
+        return dependencies
     
     def get_outputs(self) -> Set[str]:
         return set()
@@ -99,7 +103,7 @@ class FrameSaver(SystemModule):
         self._total_saved += 1
 
         # get frames to save
-        streams_to_save = data.get(SystemData.VIS_ACTIVE_STREAMS, set())
+        streams_to_save = list(SystemData.VIS_ACTIVE_STREAMS)
         if SystemData.VIS_MONTAGE in data.keys():
             streams_to_save.append(SystemData.VIS_MONTAGE)
 
