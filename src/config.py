@@ -50,8 +50,9 @@ class Config:
         # Camera
         SystemData.CAMERA_NAME: True,
         # Estimator
-        SystemData.MIDAS_NAME: True,
+        SystemData.MIDAS_NAME: False,
         SystemData.PRO_NAME: False,
+        SystemData.VGGT_NAME: False,
         # Normalizers
         SystemData.NORM_NAME: True,
         # YOLO Detectors
@@ -72,7 +73,8 @@ class Config:
             'model_path': os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_real_L\\weights\\best.pt"),
             'stream_map': {
                 SystemData.NORM_MIDAS: SystemData.MIDAS_DETECTIONS,
-                SystemData.NORM_PRO: SystemData.PRO_DETECTIONS
+                SystemData.NORM_PRO: SystemData.PRO_DETECTIONS,
+                SystemData.NORM_VGGT: SystemData.VGGT_DETECTIONS
             }
         }
     ])
@@ -81,12 +83,14 @@ class Config:
         SystemData.DEPTH: {SystemData.NORM_DEPTH: False},
         SystemData.MIDAS_ESTIMATED_DEPTH: {SystemData.NORM_MIDAS: True},
         SystemData.PRO_ESTIMATED_DEPTH: {SystemData.NORM_PRO: False},
+        SystemData.VGGT_ESTIMATED_DEPTH: {SystemData.NORM_VGGT: False}
     })
 
     tracker_stream_map: Dict[str, str] = field(default_factory=lambda: {
         SystemData.DEPTH_DETECTIONS: SystemData.TRACKED_DEPTH_DETECTIONS,
         SystemData.MIDAS_DETECTIONS: SystemData.TRACKED_MIDAS_DETECTIONS,
         SystemData.PRO_DETECTIONS: SystemData.TRACKED_PRO_DETECTIONS,
+        SystemData.VGGT_DETECTIONS: SystemData.TRACKED_VGGT_DETECTIONS
     })
 
     visualizer_initial_montage: List[str] = field(default_factory=lambda: [

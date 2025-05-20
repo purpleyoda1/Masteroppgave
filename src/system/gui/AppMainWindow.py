@@ -43,6 +43,7 @@ class AppMainWindow(QMainWindow):
         self.module_checkbox_object_names = [
             SystemData.MIDAS_NAME,
             SystemData.PRO_NAME,
+            SystemData.VGGT_NAME,
             SystemData.YOLO_DEPTH_NAME,
             SystemData.YOLO_NORM_NAME,
             SystemData.NORM_NAME,
@@ -61,6 +62,10 @@ class AppMainWindow(QMainWindow):
             SystemData.NORM_MIDAS,
             SystemData.VIS_MIDAS_DETECTIONS,
             SystemData.VIS_MIDAS_TRACKED_DETECTIONS,
+            SystemData.VGGT_ESTIMATED_DEPTH,
+            SystemData.NORM_VGGT,
+            SystemData.VIS_VGGT_DETECTIONS,
+            SystemData.VIS_VGGT_TRACKED_DETECTIONS,
             SystemData.PRO_ESTIMATED_DEPTH,
             SystemData.NORM_PRO,
             SystemData.VIS_PRO_DETECTIONS,
