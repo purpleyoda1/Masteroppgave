@@ -1,9 +1,9 @@
 # YOLO dataset configuration
-path: C:\Users\sondr\Documents\NTNU\Master\training_data\training\640_norm_color\
+path: C:\Users\sondr\Documents\NTNU\Master\training_data\training\640_norm_color_MDV\
 train: images\train 
 val: images\val 
 test: images\test  
 
 # Classes
 nc: 3
-names: ['Capacitor', 'Bracket', 'Screw'] 
+names: ['Bracket', 'Capacitor', 'Screw'] 

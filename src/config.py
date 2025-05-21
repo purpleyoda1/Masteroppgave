@@ -115,7 +115,7 @@ class Config:
     @property
     def yolo_normalized_model_path(self) -> str:
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        relative_path = "src\\model_training\\runs\\detect\\640_norm_real_L\\weights\\best.pt"
+        relative_path = "src\\model_training\\runs\\detect\\train7\\weights\\best.pt"
         return os.path.join(base_path, relative_path)
     
     # MiDaS model

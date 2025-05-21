@@ -10,7 +10,7 @@ from system.gui.AppMainWindow import AppMainWindow
 from system.gui.ControllerWorker import ControllerWorker
 from config import Config
 
-USING_LAPTOP = True
+USING_LAPTOP = False
 
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
