@@ -1,0 +1,75 @@
+EVALUATION SUMMARY
+==================================================
+
+640_norm_MDV_v11L
+
+OBJECT DETECTION METRICS
+------------------------------
+
+depth_detections:
+  Average Precision: 0.393
+  Precision: 0.980
+  Recall: 0.397
+  F1 Score: 0.565
+
+midas_detections:
+  Average Precision: 0.367
+  Precision: 0.989
+  Recall: 0.368
+  F1 Score: 0.537
+
+pro_detections:
+  Average Precision: 0.419
+  Precision: 0.972
+  Recall: 0.421
+  F1 Score: 0.588
+
+vggt_detections:
+  Average Precision: 0.417
+  Precision: 1.000
+  Recall: 0.417
+  F1 Score: 0.589
+
+
+DEPTH ESTIMATION ANALYSIS
+------------------------------
+
+depth:
+  mean_mean: 442.903
+  mean_std: 125.187
+  std_mean: 34.122
+  std_std: 14.510
+  valid_ratio_mean: 0.947
+  valid_ratio_std: 0.045
+
+norm_depth:
+  mean_mean: 238.491
+  mean_std: 17.634
+  std_mean: 20.407
+  std_std: 11.875
+  valid_ratio_mean: 0.947
+  valid_ratio_std: 0.045
+
+norm_midas:
+  mean_mean: 163.023
+  mean_std: 22.130
+  std_mean: 51.250
+  std_std: 9.891
+  valid_ratio_mean: 1.000
+  valid_ratio_std: 0.001
+
+norm_pro:
+  mean_mean: 194.509
+  mean_std: 20.810
+  std_mean: 50.519
+  std_std: 15.811
+  valid_ratio_mean: 1.000
+  valid_ratio_std: 0.000
+
+norm_vggt:
+  mean_mean: 213.221
+  mean_std: 16.451
+  std_mean: 56.234
+  std_std: 16.944
+  valid_ratio_mean: 0.999
+  valid_ratio_std: 0.000

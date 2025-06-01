@@ -103,9 +103,9 @@ class FrameSaver(SystemModule):
         self._total_saved += 1
 
         # get frames to save
-        streams_to_save = list(SystemData.VIS_ACTIVE_STREAMS)
+        streams_to_save = data[SystemData.VIS_ACTIVE_STREAMS]
         if SystemData.VIS_MONTAGE in data.keys():
-            streams_to_save.append(SystemData.VIS_MONTAGE)
+            streams_to_save.update(SystemData.VIS_MONTAGE)
 
         # Iteratively save frames
         for key in streams_to_save:

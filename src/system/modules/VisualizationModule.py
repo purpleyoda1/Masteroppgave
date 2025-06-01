@@ -470,7 +470,7 @@ class VisualizationModule(SystemModule):
 
         vis_montage = self._create_montage(views_for_montage, self._canvas_width, self._canvas_height)
         output_data[SystemData.VIS_MONTAGE] = vis_montage
-        output_data[SystemData.VIS_ACTIVE_STREAMS] = view_order
+        output_data[SystemData.VIS_ACTIVE_STREAMS] = self._active_views
 
         return output_data
     

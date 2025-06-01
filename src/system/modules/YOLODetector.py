@@ -34,11 +34,15 @@ class YOLODetector(SystemModule):
         
         self._stream_map = stream_map # Input -> Output
         self.model_path = module_path
-        self.confidence_threshold = self._config.confidence_threshold
         self.iou_treshold = self._config.iou_treshold
         self.class_names = self._config.class_names
         self.model = None
         self.is_initialized = False
+        self.evaluation_mode = self._config.evaluation_mode
+        if self.evaluation_mode:
+            self.confidence_threshold = 0.01
+        else:
+            self.confidence_threshold = self._config.confidence_threshold
     
     def initialize(self, config: Any) -> bool:
         """Initialize specified YOLO model"""

@@ -13,18 +13,17 @@ class Config:
     #------------------------------------------#
     depth_res = 640
     color_res = 640
-    depth_res = 640
-    color_res = 640
 
     if depth_res == 424:
         depth_stream_width: int = 424
         depth_stream_height: int = 240
-    if depth_res == 640:
+    elif depth_res == 640:
         depth_stream_width: int = 640   
         depth_stream_height: int = 480
-    elif depth_res == 640:
-        depth_stream_width: int = 640
-        depth_stream_height: int = 480
+        depth_stream_fx: float = 389.908
+        depth_stream_fy: float = 389.908
+        depth_stream_cx: float = 320.474
+        depth_stream_cy: float = 241.575
     depth_stream_fps: int = 6
 
     if color_res == 424:
@@ -36,6 +35,13 @@ class Config:
     elif color_res == 640:
         color_stream_width: int = 640
         color_stream_height: int = 480
+        color_stream_fx: float = 606.173
+        color_stream_fy: float = 605.09
+        color_stream_cx: float = 311.692
+        color_stream_cy: float = 254.048
+
+
+
     color_stream_fps: int = 15
 
     realsense_enable_imu = False
@@ -58,24 +64,42 @@ class Config:
         # YOLO Detectors
         SystemData.YOLO_DEPTH_NAME: False,
         SystemData.YOLO_NORM_NAME: True,
+        SystemData.YOLO_COLOR_NAME: False,
         # Detection tracker
         SystemData.TRACKER_NAME: True,
         # Visualization
         SystemData.VIS_NAME: True,
         # Frame Saver
         SystemData.SAVE_NAME: True,
+        # Evaluation
+        SystemData.CAMERA_IMPOSTOR_NAME: False,
+        SystemData.EVAL_NAME: False,
     })
 
     # List of configurations fpor system modules, which will be initialized
     yolo_configurations: List[Dict[str, Any]] = field(default_factory=lambda: [
         {
             'name': SystemData.YOLO_NORM_NAME,
-            'model_path': os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_real_L\\weights\\best.pt"),
+            'model_path': os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_SMDV_v11L\\weights\\best.pt"),
             'stream_map': {
                 SystemData.NORM_MIDAS: SystemData.MIDAS_DETECTIONS,
                 SystemData.NORM_PRO: SystemData.PRO_DETECTIONS,
                 SystemData.NORM_VGGT: SystemData.VGGT_DETECTIONS
             }
+        },
+        {
+            'name': SystemData.YOLO_DEPTH_NAME,
+            'model_path': os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_cam_RS_v11L\\weights\\best.pt"),
+            'stream_map': {
+                SystemData.NORM_DEPTH: SystemData.DEPTH_DETECTIONS
+            }
+        },
+        {
+            'name': SystemData.YOLO_COLOR_NAME,
+            'model_path': os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_RGB\\weights\\best.pt"),
+            'stream_map': {
+                SystemData.COLOR: SystemData.COLOR_DETECTIONS
+        }
         }
     ])
 
@@ -99,27 +123,17 @@ class Config:
     ])
 
     # YOLO model
-    confidence_threshold: float = 0.6
+    evaluation_mode: bool = False
+    confidence_threshold: float = 0.75
     iou_treshold: float = 0.5
     class_names: Dict[int, str] = field(default_factory=lambda: {
-        0: 'Capacitor',
-        1: 'Bracket',
+        0: 'Bracket',
+        1: 'Capacitor',
         2: 'Screw'
     })
-    @property
-    def yolo_model_path(self) -> str:
-        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        relative_path = "src\\model_training\\runs\\detect\\v11small\\best.pt"
-        return os.path.join(base_path, relative_path)
-    
-    @property
-    def yolo_normalized_model_path(self) -> str:
-        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        relative_path = "src\\model_training\\runs\\detect\\train7\\weights\\best.pt"
-        return os.path.join(base_path, relative_path)
     
     # MiDaS model
-    midas_model_type: str = "DPT_Hybrid"  # DPT_Large or DPT_Hybrid
+    midas_model_type: str = "DPT_Large"  # DPT_Large or DPT_Hybrid
 
     # Depth Pro
     depth_pro_rel_weight_path: str = "external/depth-pro/checkpoints/depth_pro.pt"
@@ -162,12 +176,42 @@ class Config:
         SystemData.COLOR,
         SystemData.DEPTH,
         SystemData.NORM_DEPTH,
+        SystemData.VIS_DEPTH_DETECTIONS,
+        SystemData.VIS_DEPTH_TRACKED_DETECTIONS,
         SystemData.MIDAS_ESTIMATED_DEPTH,
         SystemData.NORM_MIDAS,
-        SystemData.MIDAS_DETECTIONS,
-        SystemData.TRACKED_DEPTH_DETECTIONS,
+        SystemData.VIS_MIDAS_DETECTIONS,
         SystemData.PRO_ESTIMATED_DEPTH,
         SystemData.NORM_PRO,
-        SystemData.PRO_DETECTIONS,
-        SystemData.TRACKED_PRO_DETECTIONS
+        SystemData.VIS_PRO_DETECTIONS,
+        SystemData.VIS_PRO_TRACKED_DETECTIONS,
+        SystemData.VGGT_ESTIMATED_DEPTH,
+        SystemData.NORM_VGGT,
+        SystemData.VIS_VGGT_DETECTIONS,
+        SystemData.VIS_VGGT_TRACKED_DETECTIONS
     }
+
+    # Impostor
+
+    # Evaluation
+    eval_target_folder_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "testing/data/object_detection")
+    eval_image_width = 640
+    eval_image_height = 480
+    eval_output_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "testing/results/object_detection")
+    eval_detection_sources = [
+            SystemData.COLOR_DETECTIONS,
+            SystemData.DEPTH_DETECTIONS,
+            SystemData.MIDAS_DETECTIONS,
+            SystemData.PRO_DETECTIONS,
+            SystemData.VGGT_DETECTIONS,
+        ]
+    eval_detection_sources_tracked = [
+            SystemData.DEPTH_DETECTIONS,
+            SystemData.MIDAS_DETECTIONS,
+            SystemData.PRO_DETECTIONS,
+            SystemData.VGGT_DETECTIONS,
+            SystemData.TRACKED_DEPTH_DETECTIONS,
+            SystemData.TRACKED_MIDAS_DETECTIONS,
+            SystemData.TRACKED_PRO_DETECTIONS,
+            SystemData.TRACKED_VGGT_DETECTIONS
+        ]

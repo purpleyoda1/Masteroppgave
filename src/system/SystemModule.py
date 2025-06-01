@@ -10,7 +10,7 @@ class SystemModule(ABC):
     """
     Standard interface for system modules
     """
-    def __init__(self, config: Any, module_name: str, timing_buffer_size: int = 30):
+    def __init__(self, config, module_name: str, timing_buffer_size: int = 30):
         """
         Base initializer, for the most standard interface possible
         """

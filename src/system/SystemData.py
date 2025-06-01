@@ -10,9 +10,12 @@ class SystemData:
     NORM_NAME = "NormalizerModule"
     YOLO_DEPTH_NAME = "YOLO_Depth"
     YOLO_NORM_NAME = "YOLO_Normalized"
+    YOLO_COLOR_NAME = "YOLO_Color"
     TRACKER_NAME = "TrackingModule"
     VIS_NAME = "VisualizationModule"
     SAVE_NAME = "FrameSaver"
+    CAMERA_IMPOSTOR_NAME = "CameraImpostor"
+    EVAL_NAME = "EvaluationModule"
 
     # Camera
     COLOR = "color"
@@ -35,6 +38,7 @@ class SystemData:
     MIDAS_DETECTIONS = "midas_detections"
     PRO_DETECTIONS = "pro_detections"
     VGGT_DETECTIONS = "vggt_detections"
+    COLOR_DETECTIONS = "color_detections"
     
     # Normalizer
     NORM_DEPTH = "norm_depth"
@@ -47,7 +51,6 @@ class SystemData:
     TRACKED_MIDAS_DETECTIONS = "tracked_midas_detections"
     TRACKED_PRO_DETECTIONS = "tracked_pro_detections"
     TRACKED_VGGT_DETECTIONS = "tracked_vggt_detections"
-
 
     # Visualizer
     VIS_DEPTH_DETECTIONS = "vis_depth_detections"
@@ -65,3 +68,11 @@ class SystemData:
     SYS_FRAME_ID = "sys_frame_id"
     SYS_STATUS_INFO = "sys_status_info"
 
+    # Ground truth
+    GROUND_TRUTH_IMAGE_PATH = "ground_truth_image_path"
+    GROUND_TRUTH_DETECTIONS = "ground_truth_detections"
+
+    # Evaluation results
+    EVAL_RESULTS = "eval_results"
+    EVAL_METRICS = "eval_metrics"
+    EVAL_COMPLETE = "eval_complete"
