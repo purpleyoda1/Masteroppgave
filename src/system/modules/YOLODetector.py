@@ -107,8 +107,8 @@ class YOLODetector(SystemModule):
         """
         Internal function for applying detection to image
         """
-        if len(image.shape) == 2 or (len(image.shape == 3) and image.shape[2] == 1):
-                controlled_image = np.stack((image,) * 3, axis=-1) if len(image.shape) == 2 else np.repeat(image, 3, axis=2)
+        if len(image.shape) == 2 or (len(image.shape) == 3 and image.shape[2] == 1):
+            controlled_image = np.stack((image,) * 3, axis=-1) if len(image.shape) == 2 else np.repeat(image, 3, axis=2)
         else:
             controlled_image = image
 

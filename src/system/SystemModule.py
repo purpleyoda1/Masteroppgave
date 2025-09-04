@@ -81,3 +81,10 @@ class SystemModule(ABC):
         if not self._processing_times:
             return None
         return mean(self._processing_times)
+    
+    def get_average_fps(self) -> Optional[float]:
+        """Returns average fps of module"""
+        avg_time = self.get_average_processing_time()
+        if avg_time is None or avg_time == 0:
+            return 0.0
+        return 1.0 / avg_time

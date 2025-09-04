@@ -63,24 +63,32 @@ class DepthNormalizer(SystemModule):
             try:
                 input_float = input_depth.astype(np.float32)
 
+                valid_mask = input_float >= 0
+                if not np.any(valid_mask):
+                    for output_key in output_config.keys():
+                        output_data[output_key] = np.full_like(input_float, self._target_min, dtype=self._output_dtype)
+                    continue
+
+
                 # Find min and max values
-                min_val = np.min(input_float)
-                max_val = np.max(input_float)
+                min_val = np.min(input_float[valid_mask])
+                max_val = np.max(input_float[valid_mask])
                 range_val = max_val - min_val
 
+                normalized = np.zeros_like(input_float)
+
                 # Avoid division by 0
-                if range_val < 1e-6:
-                    normalized_01 = np.full_like(input_float, self._target_min)
-                else:
-                    normalized_01 = (input_float - min_val) / range_val
+                if range_val > 1e-6:
+                    normalized[valid_mask] = (input_float[valid_mask] - min_val) / range_val
+        
 
                 for output_key, invert in output_config.items():
                     # Invert if necesarry
                     if invert:
-                        normalized_01 = 1.0 - normalized_01
+                        normalized = 1.0 - normalized
 
                     # Scale to desired range
-                    normalized_depth = normalized_01 * self._range + self._target_min
+                    normalized_depth = normalized * self._range + self._target_min
 
                     # Clip to ensure data is within range, then ensure datatype
                     np.clip(normalized_depth, self._target_min, self._target_max, out=normalized_depth)

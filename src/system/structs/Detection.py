@@ -53,12 +53,12 @@ class Detection:
             self.conf is not None and
             self.class_id is not None):
             try:
-                x1, y1, x2, y2 = map(float, self.bbox2D)
-                score = float(self.conf)
-                cls_id = float(self.class_id)
-
-                bytetrack_input = [x1, y1, x2, y2, score, cls_id]
-                return bytetrack_input
+                return [
+                    float(self.bbox2D[0]), float(self.bbox2D[1]),
+                    float(self.bbox2D[2]), float(self.bbox2D[3]),
+                    float(self.conf),
+                    float(self.class_id)
+                ]
             
             except Exception as e:
                 detection_logger.error(f"Error converting detection to ByteTrack format: {e}")

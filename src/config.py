@@ -8,6 +8,9 @@ from system.SystemData import SystemData
 
 @dataclass
 class Config:
+    yolo_mode: str = "BOTH"
+    confidence_threshold: float = 0.5
+
     #------------------------------------------#
     #            Camera settings               #
     #------------------------------------------#
@@ -42,7 +45,7 @@ class Config:
 
 
 
-    color_stream_fps: int = 15
+    color_stream_fps: int = 6
 
     realsense_enable_imu = False
     imu_accel_fps = 250
@@ -77,31 +80,50 @@ class Config:
     })
 
     # List of configurations fpor system modules, which will be initialized
-    yolo_configurations: List[Dict[str, Any]] = field(default_factory=lambda: [
-        {
-            'name': SystemData.YOLO_NORM_NAME,
-            'model_path': os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_SMDV_v11L\\weights\\best.pt"),
-            'stream_map': {
-                SystemData.NORM_MIDAS: SystemData.MIDAS_DETECTIONS,
-                SystemData.NORM_PRO: SystemData.PRO_DETECTIONS,
-                SystemData.NORM_VGGT: SystemData.VGGT_DETECTIONS
+    yolo_mde_path: str = ""
+    yolo_ds_path: str = ""
+    yolo_configurations: List[Dict[str, Any]] = field(default_factory=list)
+    
+    def __post_init__(self):
+        """Set up configurations after dataclass initialization"""
+        if not hasattr(self, 'yolo_mode'):
+            self.yolo_mode = "BOTH"
+
+        if self.yolo_mode == "BOTH":
+            self.yolo_mde_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_SMDV\\weights\\best.pt")
+            self.yolo_ds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_cam_SR_new\\weights\\best.pt")
+        elif self.yolo_mode == "SYN":
+            self.yolo_mde_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_S\\weights\\best.pt")
+            self.yolo_ds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_cam_S\\weights\\best.pt")
+        elif self.yolo_mode == "REAL":
+            self.yolo_mde_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_D_v11L\\weights\\best.pt")
+            self.yolo_ds_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_cam_R\\weights\\best.pt")
+        
+        self.yolo_configurations = [
+            {
+                'name': SystemData.YOLO_NORM_NAME,
+                'model_path': self.yolo_mde_path,
+                'stream_map': {
+                    SystemData.NORM_MIDAS: SystemData.MIDAS_DETECTIONS,
+                    SystemData.NORM_PRO: SystemData.PRO_DETECTIONS,
+                    SystemData.NORM_VGGT: SystemData.VGGT_DETECTIONS
+                }
+            },
+            {
+                'name': SystemData.YOLO_DEPTH_NAME,
+                'model_path': self.yolo_ds_path,
+                'stream_map': {
+                    SystemData.NORM_DEPTH: SystemData.DEPTH_DETECTIONS
+                }
+            },
+            {
+                'name': SystemData.YOLO_COLOR_NAME,
+                'model_path': os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_RGB_all\\weights\\best.pt"),
+                'stream_map': {
+                    SystemData.COLOR: SystemData.COLOR_DETECTIONS
+                }
             }
-        },
-        {
-            'name': SystemData.YOLO_DEPTH_NAME,
-            'model_path': os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_norm_cam_RS_v11L\\weights\\best.pt"),
-            'stream_map': {
-                SystemData.NORM_DEPTH: SystemData.DEPTH_DETECTIONS
-            }
-        },
-        {
-            'name': SystemData.YOLO_COLOR_NAME,
-            'model_path': os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src\\model_training\\runs\\detect\\640_RGB\\weights\\best.pt"),
-            'stream_map': {
-                SystemData.COLOR: SystemData.COLOR_DETECTIONS
-        }
-        }
-    ])
+        ]
 
     normalizer_stream_map: Dict[str, Dict[str, bool]] = field(default_factory=lambda: {
         SystemData.DEPTH: {SystemData.NORM_DEPTH: False},
@@ -111,6 +133,7 @@ class Config:
     })
 
     tracker_stream_map: Dict[str, str] = field(default_factory=lambda: {
+        SystemData.COLOR_DETECTIONS: SystemData.TRACKED_COLOR_DETECTIONS,
         SystemData.DEPTH_DETECTIONS: SystemData.TRACKED_DEPTH_DETECTIONS,
         SystemData.MIDAS_DETECTIONS: SystemData.TRACKED_MIDAS_DETECTIONS,
         SystemData.PRO_DETECTIONS: SystemData.TRACKED_PRO_DETECTIONS,
@@ -124,7 +147,6 @@ class Config:
 
     # YOLO model
     evaluation_mode: bool = False
-    confidence_threshold: float = 0.75
     iou_treshold: float = 0.5
     class_names: Dict[int, str] = field(default_factory=lambda: {
         0: 'Bracket',
@@ -139,14 +161,12 @@ class Config:
     depth_pro_rel_weight_path: str = "external/depth-pro/checkpoints/depth_pro.pt"
 
     # BYTETracker
-    byte_track_tresh = 0.45
+    byte_track_tresh = 0.60
     byte_track_buffer = 25
-    byte_match_tresh = 0.8
-    byte_frame_rate = 5
+    byte_match_tresh = 0.3
+    byte_frame_rate = 6
+    byte_keep_frames = 15
 
-    # Detection to transformation
-    DTT_max_depth_m = 3.0           # Max registered depth
-    DTT_calc_area_pixels = 10       # Side length of area around centroid for depth calcualtion
 
     # Normalization
     norm_target_min: float = 0.0
@@ -194,10 +214,11 @@ class Config:
     # Impostor
 
     # Evaluation
-    eval_target_folder_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "testing/data/object_detection")
+    eval_run_type = "tracking_video"
+    eval_target_folder_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "testing/data", eval_run_type)
     eval_image_width = 640
     eval_image_height = 480
-    eval_output_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "testing/results/object_detection")
+    eval_output_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "testing/results", eval_run_type)
     eval_detection_sources = [
             SystemData.COLOR_DETECTIONS,
             SystemData.DEPTH_DETECTIONS,

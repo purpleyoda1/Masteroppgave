@@ -34,11 +34,11 @@ class SystemData:
     VGGT_ESTIMATED_DEPTH = "vggt_estimated_depth"
 
     # YOLO
-    DEPTH_DETECTIONS = "depth_detections"
-    MIDAS_DETECTIONS = "midas_detections"
-    PRO_DETECTIONS = "pro_detections"
-    VGGT_DETECTIONS = "vggt_detections"
-    COLOR_DETECTIONS = "color_detections"
+    DEPTH_DETECTIONS = "DepthSensor_detections"
+    MIDAS_DETECTIONS = "MiDaS_detections"
+    PRO_DETECTIONS = "DepthPro_detections"
+    VGGT_DETECTIONS = "VGGT_detections"
+    COLOR_DETECTIONS = "Color_detections"
     
     # Normalizer
     NORM_DEPTH = "norm_depth"
@@ -51,22 +51,26 @@ class SystemData:
     TRACKED_MIDAS_DETECTIONS = "tracked_midas_detections"
     TRACKED_PRO_DETECTIONS = "tracked_pro_detections"
     TRACKED_VGGT_DETECTIONS = "tracked_vggt_detections"
+    TRACKED_COLOR_DETECTIONS = "tracked_color_detections"
 
     # Visualizer
     VIS_DEPTH_DETECTIONS = "vis_depth_detections"
     VIS_MIDAS_DETECTIONS = "vis_midas_detections"
     VIS_PRO_DETECTIONS = "vis_pro_detections"
     VIS_VGGT_DETECTIONS = "vis_vggt_detections"
+    VIS_COLOR_DETECTIONS = "vis_color_detections"
     VIS_DEPTH_TRACKED_DETECTIONS = "vis_depth_tracked_detections"
     VIS_MIDAS_TRACKED_DETECTIONS = "vis_midas_tracked_detections"
     VIS_PRO_TRACKED_DETECTIONS = "vis_pro_tracked_detections"
     VIS_VGGT_TRACKED_DETECTIONS = "vis_vggt_tracked_detections"
+    VIS_COLOR_TRACKED_DETECTIONS = "vis_color_tracked_detections"
     VIS_MONTAGE = "vis_montage"
     VIS_ACTIVE_STREAMS = "vis_active_streams"
 
     # System
     SYS_FRAME_ID = "sys_frame_id"
     SYS_STATUS_INFO = "sys_status_info"
+    MODULE_FPS = "module_fps"
 
     # Ground truth
     GROUND_TRUTH_IMAGE_PATH = "ground_truth_image_path"

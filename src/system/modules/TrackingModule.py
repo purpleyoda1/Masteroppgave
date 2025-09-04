@@ -9,6 +9,7 @@ import numpy as np
 import logging
 from bytetracker import BYTETracker
 import threading
+from collections import deque, defaultdict
 
 
 class TrackingModule(SystemModule):
@@ -32,8 +33,10 @@ class TrackingModule(SystemModule):
 
         self.track_tresh = getattr(config, "byte_track_tresh", 0.45)
         self.track_buffer = getattr(config, "byte_track_buffer", 25)
-        self.match_tresh = getattr(config, "byte_match_tresh", 0.8)
+        self.match_tresh = getattr(config, "byte_match_tresh", 0.4)
         self.frame_rate = getattr(config, "byte_frame_rate", 6)
+        self.keep_frames = getattr(config, "byte_keep_frames", 9)
+        self.nms_thresh = 0.2
 
         self.is_initialized = False
 
@@ -56,7 +59,8 @@ class TrackingModule(SystemModule):
                     self.track_tresh,
                     self.track_buffer,
                     self.match_tresh,
-                    self.frame_rate
+                    self.frame_rate,
+                    keep_frames=self.keep_frames
                 )
                 self.logger.debug(f"Tracker for {input_key} succesfully initialized")
             except Exception as e:
@@ -121,92 +125,127 @@ class TrackingModule(SystemModule):
         """Return current active tracking streams"""
         with self._internal_lock:
             return self._active_trackers
-    
+        
+    def _perform_nms_on_detections(self, detections: List[Detection], nms_threshold: float) -> List[Detection]:
+        """
+        Performs Non-Maximum Suppression on the final list of tracked detections,
+        applied on a per-class basis.
+        """
+        if not detections:
+            return []
+
+        # --- MODIFIED: Group detections by class_id ---
+        detections_by_class = defaultdict(list)
+        for det in detections:
+            detections_by_class[det.class_id].append(det)
+
+        final_detections = []
+        # --- MODIFIED: Apply NMS for each class independently ---
+        for class_id, class_detections in detections_by_class.items():
+            if not class_detections:
+                continue
+
+            # Extract bounding boxes and scores for the current class
+            boxes = np.array([d.bbox2D for d in class_detections if d.bbox2D is not None])
+            scores = np.array([d.conf for d in class_detections if d.bbox2D is not None])
+            
+            if len(boxes) == 0:
+                continue
+
+            # Get indices of boxes to keep after NMS
+            x1 = boxes[:, 0]
+            y1 = boxes[:, 1]
+            x2 = boxes[:, 2]
+            y2 = boxes[:, 3]
+            areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+            order = scores.argsort()[::-1]
+            
+            keep_indices = []
+            while order.size > 0:
+                i = order[0]
+                keep_indices.append(i)
+                
+                # Calculate IoU with remaining boxes
+                xx1 = np.maximum(x1[i], x1[order[1:]])
+                yy1 = np.maximum(y1[i], y1[order[1:]])
+                xx2 = np.minimum(x2[i], x2[order[1:]])
+                yy2 = np.minimum(y2[i], y2[order[1:]])
+                
+                w = np.maximum(0.0, xx2 - xx1 + 1)
+                h = np.maximum(0.0, yy2 - yy1 + 1)
+                intersection = w * h
+                
+                iou = intersection / (areas[i] + areas[order[1:]] - intersection)
+                
+                # Keep boxes with IoU below the threshold
+                inds_to_keep = np.where(iou <= nms_threshold)[0]
+                order = order[inds_to_keep + 1]
+                
+            # Filter the original detections list for this class and add to final list
+            original_detections_with_boxes = [d for d in class_detections if d.bbox2D is not None]
+            for i in keep_indices:
+                final_detections.append(original_detections_with_boxes[i])
+        
+        return final_detections
+        
     def _process_internal(self, data) -> Optional[Dict[str, Any]]:
-        """Process and update trackers"""
         if not self.is_initialized:
-            self.logger.debug(f"{self.name} not initialized, skipping process")
             return None
         
         output_data: Dict[str, Any] = {}
-        current_frame_id = data.get(SystemData.SYS_FRAME_ID, 0)
 
         for input_key, output_key in self._stream_map.items():
-            tracked_detections: List[Detection] = []
-
             with self._internal_lock:
                 if input_key not in self._active_trackers:
                     output_data[output_key] = []
                     continue
             
-            # Check for valid tracker and detections
             detections: Optional[List[Detection]] = data.get(input_key)
-            if detections is None:
-                #self.logger.debug(f"{input_key} not found, processing as empty")
+            tracker = self.trackers.get(input_key)
+            if tracker is None or detections is None:
                 output_data[output_key] = []
                 continue
-
-            tracker = self.trackers.get(input_key)
-            if tracker is None:
-                self.logger.debug(f"Tracker for {input_key} missing")
-                output_data[input_key] = []
-                continue
             
-            # Format data
-            bytetrack_input_list = []
-            for det in detections:
-                formatted_data: Optional[List[float]] = det.to_bytetrack_format()
-                if formatted_data is not None:
-                    bytetrack_input_list.append(formatted_data)
-            
-            # Validate and format bytetrack input
+            bytetrack_input_list = [det.to_bytetrack_format() for det in detections if det.to_bytetrack_format()]
             if bytetrack_input_list:
-                bytetrack_input_np = np.array(bytetrack_input_list, dtype= np.float32)
-
-                if bytetrack_input_np.ndim != 2 or bytetrack_input_np.shape[1] != 6:
-                    bytetrack_input_np = np.empty((0, 6), dtype=np.float32)
-            
+                bytetrack_input_np = np.array(bytetrack_input_list, dtype=np.float32)
             else:
                 bytetrack_input_np = np.empty((0, 6), dtype=np.float32)
 
-            # Apply tracking
             online_targets = []
             try:
-                online_targets = tracker.update(bytetrack_input_np, current_frame_id)
+                online_targets = tracker.update(bytetrack_input_np)
             except Exception as e:
-                self.logger.error(f"Error applying {input_key} tracking: {e}")
+                self.logger.error(f"Error during tracker.update for {input_key}: {e}")
                 online_targets = []
 
-            # Create new tracked detection objects
-            if online_targets is not None:
-                if isinstance(online_targets, np.ndarray) and online_targets.ndim == 2 and online_targets.shape[1] == 7:
-                    for target in online_targets:
-                        try:
-                            x1, y1, x2, y2 = map(int, target[0:4])
-                            track_id = int(target[4])
-                            class_id = int(target[6])
-                            score = int(target[5])
-                            label = self._class_names.get(class_id, f"Track_{track_id}")
+            tracked_detections: List[Detection] = []
+            if len(online_targets) > 0:
+                for target in online_targets:
+                    try:
+                        x1, y1, x2, y2 = map(int, target[0:4])
+                        track_id = int(target[4])
+                        class_id = int(target[5])
+                        score = float(target[6])
+                        
+                        label = self._class_names.get(class_id, "Unknown")
+                        
+                        tracked_det = Detection(
+                            class_id=class_id, label=label, conf=score,
+                            source=output_key, dimension="2D",
+                            bbox2D=[x1, y1, x2, y2], track_id=track_id 
+                        )
+                        tracked_detections.append(tracked_det)
+                    except Exception as e:
+                        self.logger.error(f"Error building tracked detection from target: {e}")
 
-                            tracked_det = Detection(
-                                class_id=class_id,
-                                label=label,
-                                conf=score,
-                                source=output_key,
-                                dimension="2D",
-                                bbox2D=[x1, y1, x2, y2],
-                                track_id=track_id 
-                            )
-                            tracked_detections.append(tracked_det)
-                        except Exception as e:
-                            self.logger.error(f"Error building tracked detection: {e}")
-                else:
-                    #self.logger.warning(f"Tracker output for {input_key} on unexpected format")
-                    pass
-
-            output_data[output_key] = tracked_detections
+            final_tracked_detections = self._perform_nms_on_detections(
+                tracked_detections, 
+                nms_threshold=self.nms_thresh
+            ) 
+            output_data[output_key] = final_tracked_detections
         
-        return output_data 
+        return output_data
     
 
     def stop(self) -> None:

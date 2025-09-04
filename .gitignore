@@ -1,9 +1,12 @@
 training_data/*
-!training_data/real_world/
-!training_data/real_world/*
+!training_data/real_world/test_3005
+!training_data/real_world/train_2005
 !training_data/real_world/**
 
+
 synthetic_data/*
+
+testing/*
 
 all_code.txt
 std_data_structs.txt
@@ -15,6 +18,13 @@ src/model_training/yolo11l.pt
 src/model_training/yolo11m.pt
 src/model_training/yolo11n.pt
 src/model_training/yolo11s.pt
+src/model_training/best_model_weights/*
+
+report
+innlevering
+graveyard
+external
+
 
 
 

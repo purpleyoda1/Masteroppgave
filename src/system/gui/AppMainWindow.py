@@ -23,6 +23,7 @@ class AppMainWindow(QMainWindow):
     toggle_module_signal = pyqtSignal(str, bool)
     toggle_view_signal = pyqtSignal(str, bool)
     request_save_signal = pyqtSignal()
+    toggle_continuous_save_signal = pyqtSignal(bool)
 
     def __init__(self, config: Config, worker: ControllerWorker, worker_thread: QThread):
         super().__init__()
@@ -46,6 +47,7 @@ class AppMainWindow(QMainWindow):
             SystemData.VGGT_NAME,
             SystemData.YOLO_DEPTH_NAME,
             SystemData.YOLO_NORM_NAME,
+            SystemData.YOLO_COLOR_NAME,
             SystemData.NORM_NAME,
             SystemData.TRACKER_NAME,
             SystemData.SAVE_NAME,
@@ -54,6 +56,8 @@ class AppMainWindow(QMainWindow):
 
         self.view_checkbox_object_names = [
             SystemData.COLOR,
+            SystemData.VIS_COLOR_DETECTIONS,
+            SystemData.VIS_COLOR_TRACKED_DETECTIONS,
             SystemData.DEPTH,
             SystemData.NORM_DEPTH,
             SystemData.VIS_DEPTH_DETECTIONS,
@@ -76,6 +80,7 @@ class AppMainWindow(QMainWindow):
         if hasattr(self, "start_button"): self.start_button.clicked.connect(self.start_system_signal)
         if hasattr(self, "stop_button"): self.stop_button.clicked.connect(self.stop_system_signal)
         if hasattr(self, "save_button"): self.save_button.clicked.connect(self.request_save_signal)
+        if hasattr(self, "continuous_save_checkbox"): self.continuous_save_checkbox.toggled.connect(self.on_continuous_save_toggled)
 
         # Connect module checkboxes
         for module_name in self.module_checkbox_object_names:
@@ -111,6 +116,7 @@ class AppMainWindow(QMainWindow):
         self.toggle_module_signal.connect(self.worker.gui_toggle_module)
         self.toggle_view_signal.connect(self.worker.gui_toggle_view)
         self.request_save_signal.connect(self.worker.request_save)
+        self.toggle_continuous_save_signal.connect(self.worker.set_continuous_save)
 
         # Set up initial config
         self.show_status_message("Ready")
@@ -206,6 +212,11 @@ class AppMainWindow(QMainWindow):
         if hasattr(self, "montage_display"):
             getattr(self, "montage_display").setText("System Stopped.")
             getattr(self, "montage_display").setPixmap(QPixmap())
+
+    @pyqtSlot(bool)
+    def on_continuous_save_toggled(self, checked):
+        """Handle continuous save checkbox toggle"""
+        self.worker.set_continuous_save(checked)
 
     def closeEvent(self, event):
         """For closing pyqt thread"""

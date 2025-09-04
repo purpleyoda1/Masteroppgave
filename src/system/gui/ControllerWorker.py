@@ -14,6 +14,7 @@ class ControllerWorker(QObject):
     status_message = pyqtSignal(str)
     system_started_signal = pyqtSignal()
     system_stopped_signal = pyqtSignal()
+    continuous_save_status_changed = pyqtSignal(bool)
 
     def __init__(self, controller: SystemController, config: Any):
         super().__init__()
@@ -22,6 +23,7 @@ class ControllerWorker(QObject):
         self.is_running = False
         self._timer = QTimer(self)
         self._timer.timeout.connect(self.processing_step)
+        self._last_fps_print_time = 0
 
     @pyqtSlot()
     def start_system(self):
@@ -74,6 +76,19 @@ class ControllerWorker(QObject):
         }
         current_data[SystemData.SYS_STATUS_INFO] = status_info_package
 
+        current_time = time.time()
+        if (current_time-self._last_fps_print_time) >= 1.0:
+            fps_data = current_data.get(SystemData.MODULE_FPS)
+            if fps_data:
+                print("\r" + " " * 80, end='\r')
+                sorted_fps_items = sorted(fps_data.items())
+                fps_strings = [f"{name}: {fps:.3f} FPS" for name, fps in sorted_fps_items]
+                fps_display_text = " | ".join(fps_strings)
+                
+                print(f"--- {fps_display_text} ---", end='\r')
+                
+                self._last_fps_print_time = current_time
+
         montage = current_data.get(SystemData.VIS_MONTAGE)
         if montage is not None:
             self.new_montage_ready.emit(montage)
@@ -100,5 +115,16 @@ class ControllerWorker(QObject):
         if SystemData.SAVE_NAME in self.controller.modules:
             self.controller.request_save()
             self.status_message.emit("Frame save requested")
+        else:
+            self.status_message.emit("Frame Saver not found")
+    
+    @pyqtSlot(bool)
+    def set_continuous_save(self, enable: bool):
+        """Enable or disable continuous frame saving"""
+        if SystemData.SAVE_NAME in self.controller.modules:
+            self.controller.set_continous_save(enable)
+            status = "started" if enable else "stopped"
+            self.status_message.emit(f"Continuous save {status}")
+            self.continuous_save_status_changed.emit(enable)
         else:
             self.status_message.emit("Frame Saver not found")

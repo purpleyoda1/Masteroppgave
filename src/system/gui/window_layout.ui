@@ -16,7 +16,20 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_6">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="9,0,1">
+     <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,9,0,1,0">
+      <item>
+       <spacer name="verticalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_7" stretch="1,9">
         <item>
@@ -104,7 +117,7 @@
        </spacer>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_10" stretch="1,5,1,7,1">
+       <layout class="QVBoxLayout" name="verticalLayout_11" stretch="1,4,1,7,1">
         <item>
          <widget class="QLabel" name="label">
           <property name="font">
@@ -122,7 +135,7 @@
          </widget>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,5,1,5,1,9">
+         <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,2,1,4,1,6">
           <item>
            <widget class="QLabel" name="label_6">
             <property name="font">
@@ -206,6 +219,13 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QCheckBox" name="YOLO_Color">
+              <property name="text">
+               <string>YOLO RGB</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
           <item>
@@ -231,17 +251,17 @@
           </item>
           <item>
            <layout class="QGridLayout" name="gridLayout_2">
-            <item row="0" column="0">
-             <widget class="QCheckBox" name="NormalizerModule">
-              <property name="text">
-               <string>Normalizer</string>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="1">
              <widget class="QCheckBox" name="TrackingModule">
               <property name="text">
                <string>Tracker</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="NormalizerModule">
+              <property name="text">
+               <string>Normalizer</string>
               </property>
              </widget>
             </item>
@@ -252,6 +272,13 @@
               </property>
              </widget>
             </item>
+            <item row="2" column="0" colspan="2">
+             <widget class="QCheckBox" name="colormap">
+              <property name="text">
+               <string>Colormap</string>
+              </property>
+             </widget>
+            </item>
             <item row="1" column="1">
              <widget class="QCheckBox" name="VisualizationModule">
               <property name="text">
@@ -259,10 +286,10 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="0" colspan="2">
-             <widget class="QCheckBox" name="colormap">
+            <item row="3" column="0">
+             <widget class="QCheckBox" name="continous_save_checkbox">
               <property name="text">
-               <string>Colormap</string>
+               <string>Cont. Save</string>
               </property>
              </widget>
             </item>
@@ -287,60 +314,189 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <layout class="QVBoxLayout" name="verticalLayout_10" stretch="5,1">
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_9" stretch="1,5,1,5">
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
-             <widget class="QLabel" name="label_5">
-              <property name="font">
-               <font>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>RealSense</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_6">
+             <layout class="QVBoxLayout" name="verticalLayout_6" stretch="1,9">
               <item>
-               <widget class="QCheckBox" name="color">
+               <widget class="QLabel" name="label_5">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="font">
+                 <font>
+                  <bold>true</bold>
+                 </font>
+                </property>
                 <property name="text">
-                 <string>Color</string>
+                 <string>RealSense</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="depth">
-                <property name="text">
-                 <string>Depth</string>
+               <layout class="QVBoxLayout" name="verticalLayout_2">
+                <property name="sizeConstraint">
+                 <enum>QLayout::SetMaximumSize</enum>
                 </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="norm_depth">
-                <property name="text">
-                 <string>Normalized</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="vis_depth_detections">
-                <property name="text">
-                 <string>Detection</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="vis_depth_tracked_detections">
-                <property name="text">
-                 <string>Tracked Detection</string>
-                </property>
-               </widget>
+                <item>
+                 <widget class="QCheckBox" name="color">
+                  <property name="text">
+                   <string>Color</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="vis_color_detections">
+                  <property name="text">
+                   <string>Detections</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="vis_color_tracked_detections">
+                  <property name="text">
+                   <string>Tracked Detection</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="depth">
+                  <property name="text">
+                   <string>Depth</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="norm_depth">
+                  <property name="text">
+                   <string>Normalized</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="vis_depth_detections">
+                  <property name="text">
+                   <string>Detection</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="vis_depth_tracked_detections">
+                  <property name="text">
+                   <string>Tracked Detection</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </item>
              </layout>
             </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_8" stretch="1,5,1,5">
+              <item>
+               <widget class="QLabel" name="label_3">
+                <property name="font">
+                 <font>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>MiDaS</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_3">
+                <item>
+                 <widget class="QCheckBox" name="midas_estimated_depth">
+                  <property name="text">
+                   <string>Depth</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="norm_midas">
+                  <property name="text">
+                   <string>Normalized</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="vis_midas_detections">
+                  <property name="text">
+                   <string>Detection</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="vis_midas_tracked_detections">
+                  <property name="text">
+                   <string>Tracked Detection</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_4">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="font">
+                 <font>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>DepthPro</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout">
+                <item>
+                 <widget class="QCheckBox" name="pro_estimated_depth">
+                  <property name="text">
+                   <string>Depth</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="norm_pro">
+                  <property name="text">
+                   <string>Normalized</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="vis_pro_detections">
+                  <property name="text">
+                   <string>Detection</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="vis_pro_tracked_detections">
+                  <property name="text">
+                   <string>Tracked Detection</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_9">
             <item>
              <widget class="QLabel" name="label_9">
               <property name="font">
@@ -354,128 +510,30 @@
              </widget>
             </item>
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_2">
-              <item>
+             <layout class="QGridLayout" name="gridLayout">
+              <item row="0" column="0">
                <widget class="QCheckBox" name="vggt_estimated_depth">
                 <property name="text">
                  <string>Depth</string>
                 </property>
                </widget>
               </item>
-              <item>
-               <widget class="QCheckBox" name="norm_vggt">
-                <property name="text">
-                 <string>Normalized</string>
-                </property>
-               </widget>
-              </item>
-              <item>
+              <item row="0" column="1">
                <widget class="QCheckBox" name="vis_vggt_detections">
                 <property name="text">
                  <string>Detection</string>
                 </property>
                </widget>
               </item>
-              <item>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="norm_vggt">
+                <property name="text">
+                 <string>Normalized</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
                <widget class="QCheckBox" name="vis_vggt_tracked_detections">
-                <property name="text">
-                 <string>Tracked Detection</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QVBoxLayout" name="verticalLayout_8" stretch="1,5,1,5">
-            <item>
-             <widget class="QLabel" name="label_3">
-              <property name="font">
-               <font>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>MiDaS</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_3">
-              <item>
-               <widget class="QCheckBox" name="midas_estimated_depth">
-                <property name="text">
-                 <string>Depth</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="norm_midas">
-                <property name="text">
-                 <string>Normalized</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="vis_midas_detections">
-                <property name="text">
-                 <string>Detection</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="vis_midas_tracked_detections">
-                <property name="text">
-                 <string>Tracked Detection</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_4">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="font">
-               <font>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>DepthPro</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout">
-              <item>
-               <widget class="QCheckBox" name="pro_estimated_depth">
-                <property name="text">
-                 <string>Depth</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="norm_pro">
-                <property name="text">
-                 <string>Normalized</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="vis_pro_detections">
-                <property name="text">
-                 <string>Detection</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="vis_pro_tracked_detections">
                 <property name="text">
                  <string>Tracked Detection</string>
                 </property>
@@ -501,6 +559,19 @@
          </widget>
         </item>
        </layout>
+      </item>
+      <item>
+       <spacer name="verticalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </item>

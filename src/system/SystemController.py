@@ -76,6 +76,23 @@ class SystemController:
     def disable_module(self, module_name: str) -> None:
         """To keep the functionality clear and seperate"""
         self.enable_module(module_name, False)
+
+    def set_continous_save(self, enable: bool, saver_module_name: str= SystemData.SAVE_NAME) -> None:
+        """Enable or disable continous frame saving"""
+        if saver_module_name not in self.modules:
+            self.logger.warning(f"Saver not found, cant set continuous save")
+            return
+        
+        saver = self.modules.get(saver_module_name)
+        saver.set_continous_save(enable)
+
+    def is_continuous_saving(self, saver_module_name: str = SystemData.SAVE_NAME) -> bool:
+        """Check if continous saving is active"""
+        if saver_module_name not in self.modules:
+            return False
+        
+        saver = self.modules.get(saver_module_name)
+        return saver.is_continous_saving()
     
     def initialize(self) -> bool:
         """Initialize all registered modules"""
@@ -378,10 +395,24 @@ class SystemController:
                             self.logger.error(f"Error processing {name}: {e}")
                         
                     if self.stop_event.is_set(): break
+
+                    fps_data = {}
+                    for name in self.processing_order:
+                        if self.module_states.get(name):
+                            module = self.modules.get(name)
+                            if module:
+                                fps = module.get_average_fps()
+                                if fps is not None:
+                                    fps_data[name] = fps
+                    cycle_data[SystemData.MODULE_FPS] = fps_data
                     
                     # Update current data directory
                     with self.data_lock:
                         self.current_data = cycle_data
+                    
+                    cycle_time = time.perf_counter() - cycle_start_time
+                    fps = 1.0 / cycle_time
+                    self.logger.debug(f"Current FPS: {fps:.2f}")
                 
                 except Exception as e:
                     self.logger.error(f"Error in processing loop: {e}")

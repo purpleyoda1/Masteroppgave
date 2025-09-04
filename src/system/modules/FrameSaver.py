@@ -1,5 +1,4 @@
-# src/system/modules/FrameSaver.py
-
+      
 from ..SystemModule import SystemModule
 from ..SystemData import SystemData
 
@@ -9,6 +8,7 @@ import numpy as np
 import logging
 from typing import Any, Set, Dict, Optional, List
 import re
+import threading
 
 class FrameSaver(SystemModule):
     """
@@ -22,9 +22,15 @@ class FrameSaver(SystemModule):
         self._save_base_dir = getattr(self._config, "save_base_dir")
         
         self._save_flag = False
+        self._continous_save = False
         self._current_run_dir = None
+        self._current_sequence_dir = None
         self.is_initialized = False
+        self._sequence_frame_count = 0
+        self._sequence_num = 0
         self._total_saved = 0
+        self._save_lock = threading.Lock()
+        self._activated = False
 
     def _determine_next_run_number(self) -> int:
         """Find next number based on exisiting directories"""
@@ -48,12 +54,8 @@ class FrameSaver(SystemModule):
             self.logger.error(f"Error scanning save directory: {e}")
             return 1
 
-    def initialize(self, config: Any) -> bool:
-        """Set up and initialize module"""
-        if self.is_initialized:
-            self.logger.info(f"{self.name} already initialized")
-            return True
-        
+    def _create_run_dir(self) -> None:
+        """Setup save dir"""
         try:
             # Ensure save dir exists
             os.makedirs(self._save_base_dir, exist_ok=True)
@@ -63,7 +65,16 @@ class FrameSaver(SystemModule):
             run_dir = os.path.join(self._save_base_dir, f"run_{run_num:03d}")
             self._current_run_dir = run_dir
             os.makedirs(self._current_run_dir, exist_ok=True)
+        except Exception as e:
+            self.logger.error(f"Error creating save dir: {e}")
 
+    def initialize(self, config: Any) -> bool:
+        """Set up and initialize module"""
+        if self.is_initialized:
+            self.logger.info(f"{self.name} already initialized")
+            return True
+        
+        try:
             self.is_initialized = True
             self.logger.info(f"{self.name} initialized succesfully")
             return True
@@ -91,44 +102,102 @@ class FrameSaver(SystemModule):
             self.logger.error(f"Initialize before requesting save")
             return
         
+        with self._save_lock:
+            if not self._continous_save:
+                self.logger.info("Request save button pressed: Forcing continuous save start.")
+                self.set_continous_save(True)
+        
         self._save_flag = True
 
-    def _process_internal(self, data: Dict[str, Any]) -> None:
-        "Saves frames to dictionary defined in config file"
-        if not self._save_flag:
-            return None
-        
-        # Reset save flag immediatly
-        self._save_flag = False
-        self._total_saved += 1
+    def set_continous_save(self, enable: bool) -> None:
+        """Enable or disable continous save"""
+        if enable and not self._continous_save:
+            # If this is the first save action ever, create the run directory
+            if not self._activated:
+                self._create_run_dir()
+                self._activated = True
 
-        # get frames to save
-        streams_to_save = data[SystemData.VIS_ACTIVE_STREAMS]
-        if SystemData.VIS_MONTAGE in data.keys():
-            streams_to_save.update(SystemData.VIS_MONTAGE)
+            # Start new sequence
+            self._sequence_num += 1
+            self._sequence_frame_count = 0
+            sequence_dir = os.path.join(self._current_run_dir, f"sequence_{self._sequence_num:03d}")
+            os.makedirs(sequence_dir, exist_ok=True)
+            self._current_sequence_dir = sequence_dir
+            self.logger.info(f"Started continous save to: {self._current_sequence_dir}")
+        elif not enable and self._continous_save:
+            self.logger.info(f"Stopped continous save. Saved {self._sequence_frame_count} frames to {self._current_sequence_dir}")
+            self._current_sequence_dir = None
+        
+        self._continous_save = enable
+    
+    def is_continous_saving(self) -> bool:
+        """Check if continous saving"""
+        with self._save_lock:
+            return self._continous_save
+        
+    def _save_frames(self, data: Dict[str, Any], save_dir: str, frame_number: int) -> None:
+        """Internal method to save frames"""
+        # Get frames to save from the active streams list provided by the visualization module
+        streams_to_save = data.get(SystemData.VIS_ACTIVE_STREAMS, set()).copy()
+        
+        # Also save the main montage if it exists
+        if SystemData.VIS_MONTAGE in data:
+            streams_to_save.add(SystemData.VIS_MONTAGE)
 
         # Iteratively save frames
         for key in streams_to_save:
-            if key not in data.keys():
-                self.logger.warning(f"Requested save data not in current data dictionary")
+            if key not in data:
+                self.logger.warning(f"Requested save of '{key}', but it's not in the current data dictionary. Skipping.")
                 continue
 
             image = data[key]
             if image is None:
-                self.logger.warning(f"Data in {key} is None, couldnt save")
+                self.logger.warning(f"Data in '{key}' is None, cannot save.")
+                continue
 
-            # Make subdirectory
-            save_folder = os.path.join(self._current_run_dir, key)
+            save_folder = os.path.join(save_dir, key)
             os.makedirs(save_folder, exist_ok=True)
 
-            filename = f"{self._total_saved:04d}.png"
+            filename = f"{frame_number:04d}.png"
             filepath = os.path.join(save_folder, filename)
 
             # Attempt save
-            cv2.imwrite(filepath, image)
+            try:
+                cv2.imwrite(filepath, image)
+            except Exception as e:
+                self.logger.error(f"Failed to save image to {filepath}: {e}")
+
+    def _process_internal(self, data: Dict[str, Any]) -> None:
+        "Saves frames based on the current state (single save request or continuous save)."
+        with self._save_lock:
+            # Determine what actions are needed in this cycle
+            should_save_single = self._save_flag
+            should_save_continuous = self._continous_save and self._current_sequence_dir
+
+            # If no save operation is needed, exit early
+            if not should_save_single and not should_save_continuous:
+                return None
+
+            # If this is the first save operation of any kind, create the main run directory
+            if not self._activated:
+                self._create_run_dir()
+                self._activated = True
+            
+            # Handle single frame save request
+            if should_save_single:
+                self._total_saved += 1
+                self._save_frames(data, self._current_run_dir, self._total_saved)
+                self.logger.info(f"Saved frame #{self._total_saved} to run directory: {self._current_run_dir}")
+                self._save_flag = False  
+
+            # Handle continuous save
+            if should_save_continuous:
+                self._sequence_frame_count += 1
+                self._save_frames(data, self._current_sequence_dir, self._sequence_frame_count)
             
         return None
     
     def stop(self) -> None:
         return None
 
+    

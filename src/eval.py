@@ -6,22 +6,22 @@ import os
 import time
 
 from system.SystemController import SystemController
-from system.modules.CameraImpostor import CameraImpostor
-from system.modules.EvaluationModule import EvaluationModule
+from system.evaluation.CameraImpostor import CameraImpostor
+from system.evaluation.EvaluationModule import EvaluationModule
 from system.SystemData import SystemData
 from config import Config
 from typing import Dict
 from dataclasses import field
 
-def main():
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logger = logging.getLogger(SystemData.EVAL_NAME)
-    config = Config()
 
+def setup_and_run_evaluation(logger, yolo_mode: str = "BOTH", conf_thresh: float = 0.5, 
+                             COLOR: bool= True, MDE: bool= True, DEPTH: bool= True,
+                             evaluate_tracking: bool = False):
+    config = Config(yolo_mode=yolo_mode, confidence_threshold=conf_thresh)
     config.evaluation_mode = True
     config.module_active_states = {
         # Camera
-        SystemData.CAMERA_NAME: True,
+        SystemData.CAMERA_NAME: False,
         # Estimator
         SystemData.MIDAS_NAME: False,
         SystemData.PRO_NAME: False,
@@ -29,11 +29,11 @@ def main():
         # Normalizers
         SystemData.NORM_NAME: True,
         # YOLO Detectors
-        SystemData.YOLO_DEPTH_NAME: True,
-        SystemData.YOLO_NORM_NAME: True,
-        SystemData.YOLO_COLOR_NAME: False,
-        # Detection tracker
-        SystemData.TRACKER_NAME: False,
+        SystemData.YOLO_DEPTH_NAME: DEPTH,
+        SystemData.YOLO_NORM_NAME: MDE,
+        SystemData.YOLO_COLOR_NAME: COLOR,
+        # Detection tracker - Activate if evaluating tracking
+        SystemData.TRACKER_NAME: evaluate_tracking,
         # Visualization
         SystemData.VIS_NAME: True,
         # Frame Saver
@@ -49,7 +49,13 @@ def main():
 
     controller = SystemController(config)
     camera_impostor = CameraImpostor(config, module_name=SystemData.CAMERA_IMPOSTOR_NAME)
-    evaluation_module = EvaluationModule(config, module_name=SystemData.EVAL_NAME)
+    
+    # Pass the tracking flag to the EvaluationModule
+    evaluation_module = EvaluationModule(config, 
+                                           module_name=SystemData.EVAL_NAME, 
+                                           yolo_mode=yolo_mode, 
+                                           conf_thresh=conf_thresh, 
+                                           use_tracking=evaluate_tracking)
 
     controller.add_module(camera_impostor)
     controller.add_module(evaluation_module)
@@ -67,7 +73,7 @@ def main():
         last_log_time = time.time()
         
         while controller.is_running:
-            time.sleep(0.01)  # Small sleep to prevent CPU spinning
+            time.sleep(0.01)
             
             # Get current data to check progress
             current_data = controller.get_current_data()
@@ -76,13 +82,13 @@ def main():
             current_time = time.time()
             if current_time - last_log_time > 5.0:
                 if SystemData.GROUND_TRUTH_IMAGE_PATH in current_data:
-                    current_image = current_data[SystemData.GROUND_TRUTH_IMAGE_PATH]
+                    current_image = os.path.basename(current_data[SystemData.GROUND_TRUTH_IMAGE_PATH])
                     logger.info(f"Processing: {current_image} (frame {frame_count})")
                 last_log_time = current_time
             
             # Check if evaluation is complete
             if current_data.get(SystemData.EVAL_COMPLETE):
-                logger.info("Evaluation complete signal received")
+                logger.info("Evaluation complete signal received by main loop.")
                 break
                 
             frame_count += 1
@@ -105,10 +111,46 @@ def main():
         # Report results location
         if hasattr(evaluation_module, 'output_dir'):
             logger.info(f"Results saved to: {evaluation_module.output_dir}")
+
+
+
+def main():
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(SystemData.EVAL_NAME)
+
+    #setup_and_run_evaluation(logger, yolo_mode="BOTH", conf_thresh=0.50, evaluate_tracking=False, MDE= True, COLOR= True, DEPTH= False)
+    #setup_and_run_evaluation(logger, yolo_mode="REAL", conf_thresh=0.50, evaluate_tracking=False, MDE= True, COLOR= False, DEPTH=False)
+    #setup_and_run_evaluation(logger, yolo_mode="SYN", conf_thresh=0.50, evaluate_tracking=False, MDE= True, COLOR= False, DEPTH=False)
     
-    logger.info("Evaluation finished successfully")
+    #setup_and_run_evaluation(logger, "BOTH", conf_thresh=0.50, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "SYN", conf_thresh=0.50, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "REAL", conf_thresh=0.50, evaluate_tracking=False)
+
+
+    #setup_and_run_evaluation(logger, "BOTH", conf_thresh=0.25, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "BOTH", conf_thresh=0.30, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "BOTH", conf_thresh=0.60, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "BOTH", conf_thresh=0.45, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "BOTH", conf_thresh=0.25, evaluate_tracking=False)
+
+    #setup_and_run_evaluation(logger, "SYN", conf_thresh=0.65, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "SYN", conf_thresh=0.20, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "SYN", conf_thresh=0.60, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "SYN", conf_thresh=0.15, evaluate_tracking=False)
+
+
+    #setup_and_run_evaluation(logger, "REAL", conf_thresh=0.55, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "REAL", conf_thresh=0.50, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "REAL", conf_thresh=0.65, evaluate_tracking=False)
+    #setup_and_run_evaluation(logger, "REAL", conf_thresh=0.25, evaluate_tracking=False)
+
+    setup_and_run_evaluation(logger, "BOTH", conf_thresh=0.50, evaluate_tracking=True)
+    #setup_and_run_evaluation(logger, "SYN", conf_thresh=0.50, evaluate_tracking=True)
+    #setup_and_run_evaluation(logger, "REAL", conf_thresh=0.50, evaluate_tracking=True)
+
+    
+    logger.info("All evaluation runs finished successfully.")
     return 0
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -66,10 +66,12 @@ class VisualizationModule(SystemModule):
         ]
         # Views that need detection overlay
         self._detection_views: Dict[str, Tuple[str, str]] = {
+            SystemData.VIS_COLOR_DETECTIONS: (SystemData.COLOR, SystemData.COLOR_DETECTIONS),
             SystemData.VIS_DEPTH_DETECTIONS: (SystemData.NORM_DEPTH, SystemData.DEPTH_DETECTIONS),
             SystemData.VIS_MIDAS_DETECTIONS: (SystemData.NORM_MIDAS, SystemData.MIDAS_DETECTIONS),
             SystemData.VIS_PRO_DETECTIONS: (SystemData.NORM_PRO, SystemData.PRO_DETECTIONS),
             SystemData.VIS_VGGT_DETECTIONS: (SystemData.NORM_VGGT, SystemData.VGGT_DETECTIONS),
+            SystemData.VIS_COLOR_TRACKED_DETECTIONS: (SystemData.COLOR, SystemData.TRACKED_COLOR_DETECTIONS),
             SystemData.VIS_DEPTH_TRACKED_DETECTIONS: (SystemData.NORM_DEPTH, SystemData.TRACKED_DEPTH_DETECTIONS),
             SystemData.VIS_MIDAS_TRACKED_DETECTIONS: (SystemData.NORM_MIDAS, SystemData.TRACKED_MIDAS_DETECTIONS),
             SystemData.VIS_PRO_TRACKED_DETECTIONS: (SystemData.NORM_PRO, SystemData.TRACKED_PRO_DETECTIONS),
@@ -464,8 +466,8 @@ class VisualizationModule(SystemModule):
             if view is not None:
                 resized_view = self._resize_for_montage(view, self._view_target_height)
                 if resized_view is not None:
-                    labeled_view = self._add_label_to_view(resized_view, key)
-                    views_for_montage.append(resized_view)
+                    labeled_view = self._add_label_to_view(resized_view.copy(), key)
+                    views_for_montage.append(labeled_view)
                     self.logger.debug(f"Added {key} to montage")
 
         vis_montage = self._create_montage(views_for_montage, self._canvas_width, self._canvas_height)
